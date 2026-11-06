@@ -1,4 +1,4 @@
-# Tumbler
+# Tombler
 
 A daily word lock. Five 5-letter words are written top to bottom in a 5x5 grid,
 then every row is spun out of place. Turn the rows until each column spells a
@@ -13,3 +13,9 @@ word. Most puzzles take two to four minutes.
 Scoring: each one-letter turn counts. Par is the fewest turns that open the
 lock. "Set a row" snaps one row into place and shows as 🟪 in the shared result.
 Progress and stats are kept in the browser's localStorage.
+
+## Hosting
+
+`.github/workflows/pages.yml` publishes this folder to GitHub Pages on every
+push to `main` that touches `tombler/`. One-time setup: in the repository's
+Settings → Pages, set **Source** to **GitHub Actions**.

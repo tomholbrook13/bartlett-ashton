@@ -1,4 +1,4 @@
-<title>Tumbler</title>
+<title>Tombler</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -125,7 +125,7 @@ kbd { font-family: var(--f-dial); font-size: .75em; border: 1px solid var(--line
 
 <div class="wrap">
   <header>
-    <h1>TUMBL<span>E</span>R</h1>
+    <h1>T<span>O</span>MBLER</h1>
     <div class="meta" id="meta">No. 1</div>
   </header>
 
@@ -168,15 +168,15 @@ kbd { font-family: var(--f-dial); font-size: .75em; border: 1px solid var(--line
 <script>
 (() => {
   const N = 5;
-  const PUZZLES = window.TUMBLER_PUZZLES;
-  const [sy, sm, sd] = window.TUMBLER_START.split('-').map(Number);
+  const PUZZLES = window.TOMBLER_PUZZLES;
+  const [sy, sm, sd] = window.TOMBLER_START.split('-').map(Number);
   const startUTC = Date.UTC(sy, sm - 1, sd);
   const $ = id => document.getElementById(id);
   const mod = (a, n) => ((a % n) + n) % n;
 
   const store = {
-    get(k, d) { try { const v = localStorage.getItem('tumbler:' + k); return v == null ? d : JSON.parse(v); } catch { return d; } },
-    set(k, v) { try { localStorage.setItem('tumbler:' + k, JSON.stringify(v)); } catch {} },
+    get(k, d) { try { const v = localStorage.getItem('tombler:' + k); return v == null ? d : JSON.parse(v); } catch { return d; } },
+    set(k, v) { try { localStorage.setItem('tombler:' + k, JSON.stringify(v)); } catch {} },
   };
 
   function todayIndex() {
@@ -328,7 +328,7 @@ kbd { font-family: var(--f-dial); font-size: .75em; border: 1px solid var(--line
       const t = game.rowTurns[r];
       return t === 0 ? '⬜' : t <= 2 ? '🟩' : t <= 5 ? '🟨' : '🟧';
     }).join('');
-    const head = daily ? `Tumbler No. ${game.index + 1}` : 'Tumbler (practice)';
+    const head = daily ? `Tombler No. ${game.index + 1}` : 'Tombler (practice)';
     const hints = game.hints ? ` · ${game.hints} set` : '';
     return `${head} 🔓\n${game.turns} turns (par ${game.par})${hints} · ${fmt(game.ms)}\n${lines}`;
   }
