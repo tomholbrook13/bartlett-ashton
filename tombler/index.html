@@ -1,0 +1,401 @@
+<title>Tombler</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Martian+Mono:wght@400;600;800&family=Figtree:wght@400;500;700&display=swap">
+<style>
+/* Layout: one narrow column, the lock face is the hero; brushed-steel ground, brass for anything that turns. */
+:root {
+  --bg: #e9ecef;
+  --panel: #f7f8f9;
+  --ink: #1d2430;
+  --muted: #5c6878;
+  --line: #c8ced6;
+  --brass: #a8741a;
+  --brass-soft: #f1e2c2;
+  --dial: #ffffff;
+  --dial-edge: #b9c1cb;
+  --open: #2f7d5b;
+  --open-soft: #d6eee2;
+  --hint: #6c55b8;
+  --hint-soft: #e5dff7;
+  --shadow: 0 1px 0 rgba(255,255,255,.7) inset, 0 2px 0 rgba(29,36,48,.08);
+  --f-dial: "Martian Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+  --f-body: "Figtree", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --cell: min(15vw, 64px);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #12161c; --panel: #1a2029; --ink: #e6e9ee; --muted: #94a0b0; --line: #2c3542;
+    --brass: #e0a947; --brass-soft: #3a2e17; --dial: #222a35; --dial-edge: #384354;
+    --open: #5cc796; --open-soft: #173628; --hint: #a893f0; --hint-soft: #2a2347;
+    --shadow: 0 1px 0 rgba(255,255,255,.05) inset, 0 2px 0 rgba(0,0,0,.35);
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #12161c; --panel: #1a2029; --ink: #e6e9ee; --muted: #94a0b0; --line: #2c3542;
+  --brass: #e0a947; --brass-soft: #3a2e17; --dial: #222a35; --dial-edge: #384354;
+  --open: #5cc796; --open-soft: #173628; --hint: #a893f0; --hint-soft: #2a2347;
+  --shadow: 0 1px 0 rgba(255,255,255,.05) inset, 0 2px 0 rgba(0,0,0,.35);
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--ink); font-family: var(--f-body); font-size: 16px; line-height: 1.5;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 20px 40px;
+}
+.wrap { max-width: 460px; margin: 0 auto; display: grid; gap: 20px; }
+
+header { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+h1 { font-family: var(--f-dial); font-weight: 800; font-size: 1.6rem; letter-spacing: .02em; margin: 0; }
+h1 span { color: var(--brass); }
+.meta { font-family: var(--f-dial); font-size: .72rem; color: var(--muted); letter-spacing: .06em; text-transform: uppercase; }
+
+.counters { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.counter { background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 8px 10px; }
+.counter b { display: block; font-family: var(--f-dial); font-size: 1.15rem; font-variant-numeric: tabular-nums; }
+.counter small { font-size: .7rem; color: var(--muted); text-transform: uppercase; letter-spacing: .08em; }
+
+/* The lock face */
+.lock {
+  background: var(--panel); border: 1px solid var(--line); border-radius: 14px;
+  padding: 14px 6px; display: grid; gap: 6px; box-shadow: var(--shadow); position: relative;
+}
+.ring { display: grid; grid-template-columns: 36px 1fr 36px; align-items: center; gap: 2px; border-radius: 8px; }
+.ring.sel .window { outline: 2px solid var(--brass); outline-offset: 2px; }
+.turn {
+  appearance: none; border: 0; background: transparent; color: var(--muted); font: 600 1.3rem/1 var(--f-dial);
+  height: var(--cell); border-radius: 6px; cursor: pointer;
+}
+.turn:hover { color: var(--brass); background: var(--brass-soft); }
+.turn:focus-visible { outline: 2px solid var(--brass); }
+.turn:disabled { opacity: .25; cursor: default; background: transparent; }
+.window {
+  overflow: hidden; border-radius: 8px; background: var(--dial); border: 1px solid var(--dial-edge);
+  touch-action: pan-y; cursor: grab; user-select: none; -webkit-user-select: none;
+}
+.ring.fixed .window { border-color: var(--hint); }
+.track { display: grid; grid-template-columns: repeat(5, 1fr); }
+.cell {
+  height: var(--cell); display: grid; place-items: center;
+  font: 600 calc(var(--cell) * .48)/1 var(--f-dial); text-transform: uppercase;
+  border-left: 1px dashed var(--line); transition: background .25s, color .25s;
+}
+.cell:first-child { border-left: 0; }
+.cell.lit { background: var(--open-soft); color: var(--open); }
+.lock.open .cell { background: var(--open-soft); color: var(--open); }
+
+.actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.btn {
+  appearance: none; font: 600 .9rem/1 var(--f-body); padding: 11px 14px; border-radius: 8px; cursor: pointer;
+  border: 1px solid var(--line); background: var(--panel); color: var(--ink);
+}
+.btn:hover { border-color: var(--brass); }
+.btn:focus-visible { outline: 2px solid var(--brass); outline-offset: 2px; }
+.btn.primary { background: var(--brass); border-color: var(--brass); color: var(--panel); }
+.btn:disabled { opacity: .45; cursor: default; }
+
+.howto { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 4px 16px; }
+.howto summary { cursor: pointer; font-weight: 700; padding: 10px 0; }
+.howto ol { margin: 0 0 12px; padding-left: 20px; display: grid; gap: 6px; color: var(--muted); }
+.howto b { color: var(--ink); }
+kbd { font-family: var(--f-dial); font-size: .75em; border: 1px solid var(--line); border-radius: 4px; padding: 1px 5px; background: var(--dial); }
+
+.result { background: var(--panel); border: 1px solid var(--open); border-radius: 10px; padding: 16px; display: grid; gap: 12px; }
+.result h2 { margin: 0; font-family: var(--f-dial); font-size: 1.05rem; color: var(--open); }
+.words { display: flex; flex-wrap: wrap; gap: 6px; }
+.words span { font-family: var(--f-dial); font-size: .85rem; text-transform: uppercase; padding: 4px 8px; border-radius: 4px; background: var(--open-soft); color: var(--open); }
+.share { font-family: var(--f-dial); font-size: .8rem; white-space: pre; background: var(--dial); border: 1px solid var(--line); border-radius: 6px; padding: 10px; overflow-x: auto; margin: 0; }
+.small { font-size: .85rem; color: var(--muted); margin: 0; }
+.stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; text-align: center; }
+.stats b { display: block; font-family: var(--f-dial); font-size: 1.2rem; }
+.stats small { font-size: .7rem; color: var(--muted); text-transform: uppercase; letter-spacing: .08em; }
+
+.toast { position: fixed; left: 50%; bottom: calc(24px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%);
+  background: var(--ink); color: var(--bg); padding: 8px 14px; border-radius: 6px; font-size: .9rem; }
+
+@keyframes thunk { 0% { transform: scale(1); } 40% { transform: scale(1.03); } 100% { transform: scale(1); } }
+.lock.open { animation: thunk .45s ease-out; border-color: var(--open); }
+@media (prefers-reduced-motion: reduce) { .lock.open { animation: none; } }
+</style>
+
+<div class="wrap">
+  <header>
+    <h1>T<span>O</span>MBLER</h1>
+    <div class="meta" id="meta">No. 1</div>
+  </header>
+
+  <details class="howto" id="howto">
+    <summary>How to play</summary>
+    <ol>
+      <li>Five words are written <b>top to bottom</b> in the columns. Each row of letters has been spun out of place.</li>
+      <li>Turn the rows left or right until <b>every column spells a word</b>. Rows wrap around.</li>
+      <li>Tap the arrows, drag a row, or use <kbd>↑</kbd><kbd>↓</kbd> to pick a row and <kbd>←</kbd><kbd>→</kbd> to turn it.</li>
+      <li>Every click of a row is one turn. Try to open the lock in par. Stuck? <b>Set a row</b> snaps one into place.</li>
+    </ol>
+  </details>
+
+  <div class="counters">
+    <div class="counter"><small>Turns</small><b id="turns">0</b></div>
+    <div class="counter"><small>Par</small><b id="par">0</b></div>
+    <div class="counter"><small>Time</small><b id="time">0:00</b></div>
+  </div>
+
+  <div class="lock" id="lock" role="group" aria-label="Lock rows"></div>
+
+  <div class="actions">
+    <button class="btn" id="hintBtn" type="button">Set a row</button>
+    <button class="btn" id="practiceBtn" type="button" hidden>Practice puzzle</button>
+    <button class="btn" id="dailyBtn" type="button" hidden>Back to today</button>
+  </div>
+
+  <section class="result" id="result" hidden>
+    <h2 id="resultTitle">Unlocked</h2>
+    <div class="words" id="words"></div>
+    <pre class="share" id="shareText"></pre>
+    <div class="actions"><button class="btn primary" id="shareBtn" type="button">Copy result</button></div>
+    <div class="stats" id="stats"></div>
+    <p class="small" id="next"></p>
+  </section>
+</div>
+<div class="toast" id="toast" hidden></div>
+
+<script src="puzzles.js"></script>
+<script>
+(() => {
+  const N = 5;
+  const PUZZLES = window.TOMBLER_PUZZLES;
+  const [sy, sm, sd] = window.TOMBLER_START.split('-').map(Number);
+  const startUTC = Date.UTC(sy, sm - 1, sd);
+  const $ = id => document.getElementById(id);
+  const mod = (a, n) => ((a % n) + n) % n;
+
+  const store = {
+    get(k, d) { try { const v = localStorage.getItem('tombler:' + k); return v == null ? d : JSON.parse(v); } catch { return d; } },
+    set(k, v) { try { localStorage.setItem('tombler:' + k, JSON.stringify(v)); } catch {} },
+  };
+
+  function todayIndex() {
+    const now = new Date();
+    const day = Math.round((Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()) - startUTC) / 864e5);
+    return mod(day, PUZZLES.length);
+  }
+
+  // Rotation that turns the scrambled row back into the answer row.
+  function homeOffset(row, target) {
+    for (let o = 0; o < N; o++) if (row.slice(o) + row.slice(0, o) === target) return o;
+    return 0;
+  }
+
+  let game, daily = true, timer = null;
+
+  function load(index, isDaily) {
+    daily = isDaily;
+    const p = PUZZLES[index];
+    const answerRows = [...Array(N)].map((_, r) => p.words.map(w => w[r]).join(''));
+    const home = p.rows.map((row, r) => homeOffset(row, answerRows[r]));
+    // Fewest turns: choose the best overall rotation, then each row's shortest path.
+    let par = Infinity;
+    for (let g = 0; g < N; g++) {
+      par = Math.min(par, home.reduce((s, h) => { const d = mod(h + g, N); return s + Math.min(d, N - d); }, 0));
+    }
+    const saved = isDaily ? store.get('day-' + index, null) : null;
+    game = saved || { index, off: [0, 0, 0, 0, 0], turns: 0, rowTurns: [0, 0, 0, 0, 0], fixed: [], hints: 0, ms: 0, done: false };
+    game.p = p; game.home = home; game.par = par; game.sel = game.sel ?? 0;
+    $('meta').textContent = isDaily ? `No. ${index + 1} · ${new Date().toLocaleDateString(undefined, { day: 'numeric', month: 'short' })}` : 'Practice';
+    $('par').textContent = par;
+    $('practiceBtn').hidden = true;
+    $('dailyBtn').hidden = isDaily;
+    $('result').hidden = true;
+    $('lock').classList.remove('open');
+    build();
+    render();
+    if (game.done) finish(false); else startClock();
+  }
+
+  function letter(r, c) { return game.p.rows[r][mod(c + game.off[r], N)]; }
+  function column(c) { let s = ''; for (let r = 0; r < N; r++) s += letter(r, c); return s; }
+  function solved() {
+    const want = [...game.p.words].sort().join();
+    return [...Array(N)].map((_, c) => column(c)).sort().join() === want;
+  }
+
+  function build() {
+    const lock = $('lock');
+    lock.innerHTML = '';
+    for (let r = 0; r < N; r++) {
+      const ring = document.createElement('div');
+      ring.className = 'ring';
+      ring.innerHTML = `<button class="turn" type="button" aria-label="Turn row ${r + 1} left">‹</button>
+        <div class="window"><div class="track">${'<div class="cell"></div>'.repeat(N)}</div></div>
+        <button class="turn" type="button" aria-label="Turn row ${r + 1} right">›</button>`;
+      const [left, right] = ring.querySelectorAll('.turn');
+      left.onclick = () => { select(r); turn(r, 1); };
+      right.onclick = () => { select(r); turn(r, -1); };
+      dragRow(ring.querySelector('.window'), r);
+      lock.appendChild(ring);
+    }
+  }
+
+  function dragRow(win, r) {
+    let x0 = null, moved = 0;
+    win.addEventListener('pointerdown', e => { x0 = e.clientX; moved = 0; select(r); win.setPointerCapture(e.pointerId); });
+    win.addEventListener('pointermove', e => {
+      if (x0 == null) return;
+      const step = win.clientWidth / N;
+      const dx = e.clientX - x0;
+      if (Math.abs(dx) >= step * 0.6) { const dir = dx > 0 ? -1 : 1; turn(r, dir); x0 += dir === -1 ? step : -step; moved++; }
+    });
+    const end = () => { x0 = null; };
+    win.addEventListener('pointerup', end);
+    win.addEventListener('pointercancel', end);
+  }
+
+  function select(r) { game.sel = r; render(); }
+
+  function turn(r, dir) {
+    if (game.done || game.fixed.includes(r)) return;
+    game.off[r] = mod(game.off[r] + dir, N);
+    game.turns++; game.rowTurns[r]++;
+    const track = $('lock').children[r].querySelector('.track');
+    if (!matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      track.animate([{ transform: `translateX(${dir * 20}%)` }, { transform: 'none' }], { duration: 140, easing: 'cubic-bezier(.2,.8,.3,1)' });
+    }
+    render();
+    save();
+    if (solved()) { game.done = true; save(); finish(true); }
+  }
+
+  function hint() {
+    if (game.done) return;
+    // Align against row 0's current position (or the first row already fixed).
+    const anchor = game.fixed.length ? game.fixed[0] : 0;
+    const shift = game.off[anchor] - game.home[anchor];
+    const wrong = [...Array(N).keys()].filter(r => r !== anchor && !game.fixed.includes(r) && mod(game.home[r] + shift - game.off[r], N) !== 0);
+    const free = wrong.length ? wrong : [...Array(N).keys()].filter(r => r !== anchor && !game.fixed.includes(r));
+    if (!free.length) return;
+    const r = free[Math.floor(Math.random() * free.length)];
+    if (!game.fixed.includes(anchor)) game.fixed.push(anchor);
+    game.off[r] = mod(game.home[r] + shift, N);
+    game.fixed.push(r);
+    (game.hinted = game.hinted || []).push(r);
+    game.hints++;
+    render(); save();
+    if (solved()) { game.done = true; save(); finish(true); }
+  }
+
+  function render() {
+    const words = new Set(game.p.words);
+    const lit = [...Array(N)].map((_, c) => words.has(column(c)));
+    [...$('lock').children].forEach((ring, r) => {
+      ring.classList.toggle('sel', r === game.sel && !game.done);
+      ring.classList.toggle('fixed', game.fixed.includes(r));
+      ring.querySelectorAll('.turn').forEach(b => b.disabled = game.done || game.fixed.includes(r));
+      ring.querySelectorAll('.cell').forEach((cell, c) => { cell.textContent = letter(r, c); cell.classList.toggle('lit', lit[c]); });
+    });
+    $('turns').textContent = game.turns;
+    $('hintBtn').disabled = game.done || game.fixed.length >= N;
+    $('time').textContent = fmt(game.ms);
+  }
+
+  function fmt(ms) { const s = Math.floor(ms / 1000); return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`; }
+
+  function startClock() {
+    clearInterval(timer);
+    let last = Date.now();
+    timer = setInterval(() => {
+      if (document.hidden || game.done) { last = Date.now(); return; }
+      const now = Date.now(); game.ms += now - last; last = now;
+      $('time').textContent = fmt(game.ms);
+      if (game.ms % 5000 < 1000) save();
+    }, 250);
+  }
+
+  function save() {
+    if (!daily) return;
+    const { p, home, par, ...rest } = game;
+    store.set('day-' + game.index, rest);
+  }
+
+  function shareText() {
+    // One square per row: purple if it was set by a hint, otherwise by how many turns it took.
+    const lines = [...Array(N).keys()].map(r => {
+      if ((game.hinted || []).includes(r)) return '🟪';
+      const t = game.rowTurns[r];
+      return t === 0 ? '⬜' : t <= 2 ? '🟩' : t <= 5 ? '🟨' : '🟧';
+    }).join('');
+    const head = daily ? `Tombler No. ${game.index + 1}` : 'Tombler (practice)';
+    const hints = game.hints ? ` · ${game.hints} set` : '';
+    return `${head} 🔓\n${game.turns} turns (par ${game.par})${hints} · ${fmt(game.ms)}\n${lines}`;
+  }
+
+  function finish(fresh) {
+    clearInterval(timer);
+    render();
+    $('lock').classList.add('open');
+    const diff = game.turns - game.par;
+    $('resultTitle').textContent = game.hints ? 'Unlocked, with help' : diff <= 0 ? 'Unlocked in par' : `Unlocked, ${diff} over par`;
+    $('words').innerHTML = game.p.words.map(w => `<span>${w}</span>`).join('');
+    $('shareText').textContent = shareText();
+    $('practiceBtn').hidden = false;
+    if (daily && fresh) recordStats();
+    renderStats();
+    $('result').hidden = false;
+    if (fresh) $('result').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
+
+  function recordStats() {
+    const s = store.get('stats', { played: 0, streak: 0, best: 0, last: null, inPar: 0 });
+    if (s.last === game.index) return;
+    s.played++;
+    s.streak = s.last === game.index - 1 ? s.streak + 1 : 1;
+    s.best = Math.max(s.best, s.streak);
+    if (!game.hints && game.turns <= game.par) s.inPar++;
+    s.last = game.index;
+    store.set('stats', s);
+  }
+
+  function renderStats() {
+    const s = store.get('stats', { played: 0, streak: 0, best: 0, inPar: 0 });
+    $('stats').hidden = !daily;
+    $('stats').innerHTML = `<div><b>${s.played}</b><small>Played</small></div><div><b>${s.streak}</b><small>Streak</small></div><div><b>${s.inPar}</b><small>In par</small></div>`;
+    const now = new Date(), next = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
+    const mins = Math.round((next - now) / 60000);
+    $('next').textContent = daily ? `Next lock in ${Math.floor(mins / 60)}h ${mins % 60}m.` : 'Practice puzzles do not count toward your stats.';
+  }
+
+  function toast(msg) {
+    const t = $('toast'); t.textContent = msg; t.hidden = false;
+    clearTimeout(toast.t); toast.t = setTimeout(() => t.hidden = true, 1800);
+  }
+
+  $('hintBtn').onclick = hint;
+  $('practiceBtn').onclick = () => load(Math.floor(Math.random() * PUZZLES.length), false);
+  $('dailyBtn').onclick = () => load(todayIndex(), true);
+  $('shareBtn').onclick = () => {
+    const text = $('shareText').textContent;
+    const p = navigator.clipboard?.writeText(text);
+    if (p) p.then(() => toast('Copied'), () => selectShare()); else selectShare();
+  };
+  function selectShare() {
+    const range = document.createRange(); range.selectNodeContents($('shareText'));
+    const sel = getSelection(); sel.removeAllRanges(); sel.addRange(range);
+    toast('Selected. Copy it from here.');
+  }
+
+  document.addEventListener('keydown', e => {
+    if (!game || game.done || e.target.closest?.('summary')) return;
+    if (e.key === 'ArrowUp') { game.sel = mod(game.sel - 1, N); render(); e.preventDefault(); }
+    else if (e.key === 'ArrowDown') { game.sel = mod(game.sel + 1, N); render(); e.preventDefault(); }
+    else if (e.key === 'ArrowLeft') { turn(game.sel, 1); e.preventDefault(); }
+    else if (e.key === 'ArrowRight') { turn(game.sel, -1); e.preventDefault(); }
+  });
+
+  if (!store.get('seen', false)) { $('howto').open = true; store.set('seen', true); }
+  load(todayIndex(), true);
+})();
+</script>
