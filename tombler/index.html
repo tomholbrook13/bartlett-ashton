@@ -1,3 +1,7 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Tombler</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -42,6 +46,7 @@
 }
 
 * { box-sizing: border-box; }
+[hidden] { display: none !important; }
 body {
   background: var(--bg); color: var(--ink); font-family: var(--f-body); font-size: 16px; line-height: 1.5;
   padding-left: max(16px, env(safe-area-inset-left, 0px));
@@ -78,7 +83,7 @@ h1 span { color: var(--brass); }
   overflow: hidden; border-radius: 8px; background: var(--dial); border: 1px solid var(--dial-edge);
   touch-action: pan-y; cursor: grab; user-select: none; -webkit-user-select: none;
 }
-.ring.fixed .window { border-color: var(--hint); }
+.ring.idle .window { cursor: default; }
 .track { display: grid; grid-template-columns: repeat(5, 1fr); }
 .cell {
   height: var(--cell); display: grid; place-items: center;
@@ -86,8 +91,10 @@ h1 span { color: var(--brass); }
   border-left: 1px dashed var(--line); transition: background .25s, color .25s;
 }
 .cell:first-child { border-left: 0; }
-.cell.lit { background: var(--open-soft); color: var(--open); }
-.lock.open .cell { background: var(--open-soft); color: var(--open); }
+.cell.locked { background: var(--open-soft); color: var(--open); }
+
+.msg { margin: 0; min-height: 1.5em; font-size: .95rem; color: var(--muted); }
+.msg b { color: var(--ink); font-family: var(--f-dial); font-weight: 600; text-transform: uppercase; }
 
 .actions { display: flex; gap: 8px; flex-wrap: wrap; }
 .btn {
@@ -132,20 +139,22 @@ kbd { font-family: var(--f-dial); font-size: .75em; border: 1px solid var(--line
   <details class="howto" id="howto">
     <summary>How to play</summary>
     <ol>
-      <li>Five words are written <b>top to bottom</b> in the columns. Each row of letters has been spun out of place.</li>
-      <li>Turn the rows left or right until <b>every column spells a word</b>. Rows wrap around.</li>
+      <li>Five words are hidden in the rings. Turn the rows to spell one of them <b>down any column</b>, one letter from each row.</li>
+      <li>When you find one, its column <b>locks</b> and the leftover letters spin onto smaller rings.</li>
+      <li>Keep going until all five words are locked. The last one drops into place by itself.</li>
       <li>Tap the arrows, drag a row, or use <kbd>↑</kbd><kbd>↓</kbd> to pick a row and <kbd>←</kbd><kbd>→</kbd> to turn it.</li>
-      <li>Every click of a row is one turn. Try to open the lock in par. Stuck? <b>Set a row</b> snaps one into place.</li>
+      <li>Every click is one turn. Stuck? <b>Set a row</b> turns one row to where the nearest word needs it.</li>
     </ol>
   </details>
 
   <div class="counters">
+    <div class="counter"><small>Words</small><b id="found">0/5</b></div>
     <div class="counter"><small>Turns</small><b id="turns">0</b></div>
-    <div class="counter"><small>Par</small><b id="par">0</b></div>
     <div class="counter"><small>Time</small><b id="time">0:00</b></div>
   </div>
 
   <div class="lock" id="lock" role="group" aria-label="Lock rows"></div>
+  <p class="msg" id="msg" aria-live="polite"></p>
 
   <div class="actions">
     <button class="btn" id="hintBtn" type="button">Set a row</button>
@@ -165,19 +174,32 @@ kbd { font-family: var(--f-dial); font-size: .75em; border: 1px solid var(--line
 <div class="toast" id="toast" hidden></div>
 
 <script src="puzzles.js"></script>
+<script src="words.js"></script>
 <script>
 (() => {
   const N = 5;
   const PUZZLES = window.TOMBLER_PUZZLES;
+  const VALID = new Set((window.TOMBLER_WORDS || '').split(' '));
   const [sy, sm, sd] = window.TOMBLER_START.split('-').map(Number);
   const startUTC = Date.UTC(sy, sm - 1, sd);
   const $ = id => document.getElementById(id);
   const mod = (a, n) => ((a % n) + n) % n;
+  const reduceMotion = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
 
   const store = {
     get(k, d) { try { const v = localStorage.getItem('tombler:' + k); return v == null ? d : JSON.parse(v); } catch { return d; } },
     set(k, v) { try { localStorage.setItem('tombler:' + k, JSON.stringify(v)); } catch {} },
   };
+
+  // Small seeded PRNG so every player gets the same re-spins for the same moves.
+  function rng(seed) {
+    return () => {
+      seed = (seed + 0x6D2B79F5) | 0;
+      let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
+      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+  }
 
   function todayIndex() {
     const now = new Date();
@@ -185,45 +207,146 @@ kbd { font-family: var(--f-dial); font-size: .75em; border: 1px solid var(--line
     return mod(day, PUZZLES.length);
   }
 
-  // Rotation that turns the scrambled row back into the answer row.
-  function homeOffset(row, target) {
-    for (let o = 0; o < N; o++) if (row.slice(o) + row.slice(0, o) === target) return o;
-    return 0;
-  }
-
   let game, daily = true, timer = null;
+
+  function newGame(index) {
+    const p = PUZZLES[index];
+    return {
+      index,
+      letters: p.rows.map(r => r.split('')),
+      off: Array(N).fill(0),
+      locked: [],            // [column, word] in the order found
+      remaining: [...p.words],
+      turns: 0, hints: 0, ms: 0, done: false, sel: 0,
+      note: "Spell any one of today's five words down a column.",
+      stages: [],            // { turns, par, hints } for each word the player found
+      cur: { turns: 0, hints: 0, par: 0 },
+    };
+  }
 
   function load(index, isDaily) {
     daily = isDaily;
-    const p = PUZZLES[index];
-    const answerRows = [...Array(N)].map((_, r) => p.words.map(w => w[r]).join(''));
-    const home = p.rows.map((row, r) => homeOffset(row, answerRows[r]));
-    // Fewest turns: choose the best overall rotation, then each row's shortest path.
-    let par = Infinity;
-    for (let g = 0; g < N; g++) {
-      par = Math.min(par, home.reduce((s, h) => { const d = mod(h + g, N); return s + Math.min(d, N - d); }, 0));
-    }
-    const saved = isDaily ? store.get('day-' + index, null) : null;
-    game = saved || { index, off: [0, 0, 0, 0, 0], turns: 0, rowTurns: [0, 0, 0, 0, 0], fixed: [], hints: 0, ms: 0, done: false };
-    game.p = p; game.home = home; game.par = par; game.sel = game.sel ?? 0;
+    game = (isDaily && store.get('v2-day-' + index, null)) || newGame(index);
+    if (!game.cur.par && !game.done) game.cur.par = plan().cost;
     $('meta').textContent = isDaily ? `No. ${index + 1} · ${new Date().toLocaleDateString(undefined, { day: 'numeric', month: 'short' })}` : 'Practice';
-    $('par').textContent = par;
     $('practiceBtn').hidden = true;
     $('dailyBtn').hidden = isDaily;
     $('result').hidden = true;
     $('lock').classList.remove('open');
+    say(game.note || '');
     build();
     render();
     if (game.done) finish(false); else startClock();
   }
 
-  function letter(r, c) { return game.p.rows[r][mod(c + game.off[r], N)]; }
+  // ----- Board model -----
+  const lockedCols = () => new Set(game.locked.map(([c]) => c));
+  function freeCols() { const l = lockedCols(); return [...Array(N).keys()].filter(c => !l.has(c)); }
+  function letter(r, c) {
+    const lock = game.locked.find(([lc]) => lc === c);
+    if (lock) return lock[1][r];
+    const F = freeCols(), k = F.length;
+    return game.letters[r][mod(F.indexOf(c) + game.off[r], k)];
+  }
   function column(c) { let s = ''; for (let r = 0; r < N; r++) s += letter(r, c); return s; }
-  function solved() {
-    const want = [...game.p.words].sort().join();
-    return [...Array(N)].map((_, c) => column(c)).sort().join() === want;
+
+  // Cheapest way to spell a remaining word in a free column from the current position.
+  function plan() {
+    const F = freeCols(), k = F.length;
+    let best = { cost: Infinity };
+    F.forEach((c, i) => {
+      for (const w of game.remaining) {
+        let cost = 0; const target = [];
+        for (let r = 0; r < N; r++) {
+          let bestRow = null;
+          game.letters[r].forEach((ch, j) => {
+            if (ch !== w[r]) return;
+            const o = mod(j - i, k), d = mod(o - game.off[r], k), steps = Math.min(d, k - d);
+            if (!bestRow || steps < bestRow.steps) bestRow = { o, steps };
+          });
+          if (!bestRow) { cost = Infinity; break; }
+          cost += bestRow.steps; target.push(bestRow);
+        }
+        if (cost < best.cost) best = { cost, col: c, word: w, target };
+      }
+    });
+    return best;
   }
 
+  function lockColumn(c, w) {
+    const F = freeCols(), k = F.length, i = F.indexOf(c);
+    game.letters = game.letters.map((row, r) => {
+      const shown = [...Array(k)].map((_, j) => row[mod(j + game.off[r], k)]);
+      shown.splice(i, 1);
+      return shown;
+    });
+    game.off = Array(N).fill(0);
+    game.locked.push([c, w]);
+    game.remaining.splice(game.remaining.indexOf(w), 1);
+  }
+
+  function respin() {
+    const k = freeCols().length;
+    const rand = rng(game.locked.reduce((s, [c]) => s * 7 + c + 1, game.index * 977));
+    for (let attempt = 0; attempt < 60; attempt++) {
+      game.off = game.off.map(() => Math.floor(rand() * k));
+      if (!freeCols().some(c => game.remaining.includes(column(c)))) break;
+    }
+  }
+
+  // ----- Moves -----
+  function turn(r, dir) {
+    if (game.done || freeCols().length < 2) return;
+    game.off[r] = mod(game.off[r] + dir, freeCols().length);
+    game.turns++; game.cur.turns++;
+    animateRow(r, dir);
+    afterMove();
+  }
+
+  function hint() {
+    if (game.done) return;
+    const p = plan();
+    if (!isFinite(p.cost)) return;
+    // Move the row that is furthest from where the nearest word needs it.
+    let r = 0;
+    p.target.forEach((t, i) => { if (t.steps > p.target[r].steps) r = i; });
+    if (p.target[r].steps === 0) return;
+    game.off[r] = p.target[r].o;
+    game.hints++; game.cur.hints++;
+    game.sel = r;
+    animateRow(r, 0);
+    afterMove();
+  }
+
+  function afterMove() {
+    const hit = freeCols().find(c => game.remaining.includes(column(c)));
+    if (hit !== undefined) {
+      const w = column(hit);
+      game.stages.push({ ...game.cur });
+      lockColumn(hit, w);
+      if (game.remaining.length === 1) {
+        // One ring position left: the last word drops in by itself.
+        const last = freeCols()[0];
+        lockColumn(last, column(last));
+        game.done = true;
+        render(); flashColumn(hit); save(); finish(true);
+        return;
+      }
+      respin();
+      game.cur = { turns: 0, hints: 0, par: plan().cost };
+      const left = game.remaining.length;
+      game.note = `Locked <b>${w}</b>. The rings have re-spun with ${N - game.locked.length} letters each. ${left} words to go.`;
+      say(game.note);
+      render(); flashColumn(hit); fadeFree();
+    } else {
+      const near = freeCols().map(column).find(s => VALID.has(s));
+      say(near ? `<b>${near}</b> is a word, but not one of today's five.` : game.note || '');
+      render();
+    }
+    save();
+  }
+
+  // ----- View -----
   function build() {
     const lock = $('lock');
     lock.innerHTML = '';
@@ -242,13 +365,12 @@ kbd { font-family: var(--f-dial); font-size: .75em; border: 1px solid var(--line
   }
 
   function dragRow(win, r) {
-    let x0 = null, moved = 0;
-    win.addEventListener('pointerdown', e => { x0 = e.clientX; moved = 0; select(r); win.setPointerCapture(e.pointerId); });
+    let x0 = null;
+    win.addEventListener('pointerdown', e => { x0 = e.clientX; select(r); win.setPointerCapture(e.pointerId); });
     win.addEventListener('pointermove', e => {
       if (x0 == null) return;
-      const step = win.clientWidth / N;
-      const dx = e.clientX - x0;
-      if (Math.abs(dx) >= step * 0.6) { const dir = dx > 0 ? -1 : 1; turn(r, dir); x0 += dir === -1 ? step : -step; moved++; }
+      const step = win.clientWidth / N, dx = e.clientX - x0;
+      if (Math.abs(dx) >= step * 0.6) { const dir = dx > 0 ? -1 : 1; turn(r, dir); x0 += dir === -1 ? step : -step; }
     });
     const end = () => { x0 = null; };
     win.addEventListener('pointerup', end);
@@ -257,51 +379,48 @@ kbd { font-family: var(--f-dial); font-size: .75em; border: 1px solid var(--line
 
   function select(r) { game.sel = r; render(); }
 
-  function turn(r, dir) {
-    if (game.done || game.fixed.includes(r)) return;
-    game.off[r] = mod(game.off[r] + dir, N);
-    game.turns++; game.rowTurns[r]++;
-    const track = $('lock').children[r].querySelector('.track');
-    if (!matchMedia('(prefers-reduced-motion: reduce)').matches) {
-      track.animate([{ transform: `translateX(${dir * 20}%)` }, { transform: 'none' }], { duration: 140, easing: 'cubic-bezier(.2,.8,.3,1)' });
-    }
-    render();
-    save();
-    if (solved()) { game.done = true; save(); finish(true); }
+  function cellsOf(r) { return [...$('lock').children[r].querySelectorAll('.cell')]; }
+
+  function animateRow(r, dir) {
+    if (reduceMotion()) return;
+    const locked = lockedCols();
+    cellsOf(r).forEach((cell, c) => {
+      if (locked.has(c)) return;
+      cell.animate([{ transform: `translateX(${dir * 35}%)`, opacity: .35 }, { transform: 'none', opacity: 1 }], { duration: 150, easing: 'cubic-bezier(.2,.8,.3,1)' });
+    });
   }
 
-  function hint() {
-    if (game.done) return;
-    // Align against row 0's current position (or the first row already fixed).
-    const anchor = game.fixed.length ? game.fixed[0] : 0;
-    const shift = game.off[anchor] - game.home[anchor];
-    const wrong = [...Array(N).keys()].filter(r => r !== anchor && !game.fixed.includes(r) && mod(game.home[r] + shift - game.off[r], N) !== 0);
-    const free = wrong.length ? wrong : [...Array(N).keys()].filter(r => r !== anchor && !game.fixed.includes(r));
-    if (!free.length) return;
-    const r = free[Math.floor(Math.random() * free.length)];
-    if (!game.fixed.includes(anchor)) game.fixed.push(anchor);
-    game.off[r] = mod(game.home[r] + shift, N);
-    game.fixed.push(r);
-    (game.hinted = game.hinted || []).push(r);
-    game.hints++;
-    render(); save();
-    if (solved()) { game.done = true; save(); finish(true); }
+  function flashColumn(c) {
+    if (reduceMotion()) return;
+    for (let r = 0; r < N; r++) {
+      cellsOf(r)[c].animate([{ transform: 'scale(1.18)' }, { transform: 'none' }], { duration: 320, delay: r * 40, easing: 'ease-out' });
+    }
+  }
+
+  function fadeFree() {
+    if (reduceMotion()) return;
+    const locked = lockedCols();
+    for (let r = 0; r < N; r++) cellsOf(r).forEach((cell, c) => {
+      if (!locked.has(c)) cell.animate([{ opacity: 0, transform: 'translateY(-30%)' }, { opacity: 1, transform: 'none' }], { duration: 260, delay: 120 + r * 50, fill: 'backwards' });
+    });
   }
 
   function render() {
-    const words = new Set(game.p.words);
-    const lit = [...Array(N)].map((_, c) => words.has(column(c)));
+    const locked = lockedCols();
+    const idle = game.done || freeCols().length < 2;
     [...$('lock').children].forEach((ring, r) => {
-      ring.classList.toggle('sel', r === game.sel && !game.done);
-      ring.classList.toggle('fixed', game.fixed.includes(r));
-      ring.querySelectorAll('.turn').forEach(b => b.disabled = game.done || game.fixed.includes(r));
-      ring.querySelectorAll('.cell').forEach((cell, c) => { cell.textContent = letter(r, c); cell.classList.toggle('lit', lit[c]); });
+      ring.classList.toggle('sel', r === game.sel && !idle);
+      ring.classList.toggle('idle', idle);
+      ring.querySelectorAll('.turn').forEach(b => b.disabled = idle);
+      cellsOf(r).forEach((cell, c) => { cell.textContent = letter(r, c); cell.classList.toggle('locked', locked.has(c)); });
     });
+    $('found').textContent = `${game.locked.length}/${N}`;
     $('turns').textContent = game.turns;
-    $('hintBtn').disabled = game.done || game.fixed.length >= N;
+    $('hintBtn').disabled = idle;
     $('time').textContent = fmt(game.ms);
   }
 
+  function say(html) { $('msg').innerHTML = html; }
   function fmt(ms) { const s = Math.floor(ms / 1000); return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`; }
 
   function startClock() {
@@ -311,41 +430,37 @@ kbd { font-family: var(--f-dial); font-size: .75em; border: 1px solid var(--line
       if (document.hidden || game.done) { last = Date.now(); return; }
       const now = Date.now(); game.ms += now - last; last = now;
       $('time').textContent = fmt(game.ms);
-      if (game.ms % 5000 < 1000) save();
+      if (game.ms % 5000 < 250) save();
     }, 250);
   }
 
-  function save() {
-    if (!daily) return;
-    const { p, home, par, ...rest } = game;
-    store.set('day-' + game.index, rest);
-  }
+  function save() { if (daily) store.set('v2-day-' + game.index, game); }
+
+  // ----- Finish -----
+  const par = () => game.stages.reduce((s, x) => s + x.par, 0);
 
   function shareText() {
-    // One square per row: purple if it was set by a hint, otherwise by how many turns it took.
-    const lines = [...Array(N).keys()].map(r => {
-      if ((game.hinted || []).includes(r)) return '🟪';
-      const t = game.rowTurns[r];
-      return t === 0 ? '⬜' : t <= 2 ? '🟩' : t <= 5 ? '🟨' : '🟧';
-    }).join('');
+    // One square per word you had to find: purple if you used a hint, otherwise how close to par.
+    const squares = game.stages.map(s => s.hints ? '🟪' : s.turns <= s.par ? '🟩' : s.turns <= s.par + 3 ? '🟨' : '🟧').join('');
     const head = daily ? `Tombler No. ${game.index + 1}` : 'Tombler (practice)';
     const hints = game.hints ? ` · ${game.hints} set` : '';
-    return `${head} 🔓\n${game.turns} turns (par ${game.par})${hints} · ${fmt(game.ms)}\n${lines}`;
+    return `${head} 🔓\n${game.turns} turns (par ${par()})${hints} · ${fmt(game.ms)}\n${squares}`;
   }
 
   function finish(fresh) {
     clearInterval(timer);
     render();
     $('lock').classList.add('open');
-    const diff = game.turns - game.par;
+    const diff = game.turns - par();
     $('resultTitle').textContent = game.hints ? 'Unlocked, with help' : diff <= 0 ? 'Unlocked in par' : `Unlocked, ${diff} over par`;
-    $('words').innerHTML = game.p.words.map(w => `<span>${w}</span>`).join('');
+    say('');
+    $('words').innerHTML = game.locked.map(([, w]) => `<span>${w}</span>`).join('');
     $('shareText').textContent = shareText();
     $('practiceBtn').hidden = false;
     if (daily && fresh) recordStats();
     renderStats();
     $('result').hidden = false;
-    if (fresh) $('result').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    if (fresh) $('result').scrollIntoView({ behavior: reduceMotion() ? 'auto' : 'smooth', block: 'nearest' });
   }
 
   function recordStats() {
@@ -354,7 +469,7 @@ kbd { font-family: var(--f-dial); font-size: .75em; border: 1px solid var(--line
     s.played++;
     s.streak = s.last === game.index - 1 ? s.streak + 1 : 1;
     s.best = Math.max(s.best, s.streak);
-    if (!game.hints && game.turns <= game.par) s.inPar++;
+    if (!game.hints && game.turns <= par()) s.inPar++;
     s.last = game.index;
     store.set('stats', s);
   }
@@ -379,7 +494,7 @@ kbd { font-family: var(--f-dial); font-size: .75em; border: 1px solid var(--line
   $('shareBtn').onclick = () => {
     const text = $('shareText').textContent;
     const p = navigator.clipboard?.writeText(text);
-    if (p) p.then(() => toast('Copied'), () => selectShare()); else selectShare();
+    if (p) p.then(() => toast('Copied'), selectShare); else selectShare();
   };
   function selectShare() {
     const range = document.createRange(); range.selectNodeContents($('shareText'));
@@ -395,7 +510,7 @@ kbd { font-family: var(--f-dial); font-size: .75em; border: 1px solid var(--line
     else if (e.key === 'ArrowRight') { turn(game.sel, -1); e.preventDefault(); }
   });
 
-  if (!store.get('seen', false)) { $('howto').open = true; store.set('seen', true); }
+  if (!store.get('seen-v2', false)) { $('howto').open = true; store.set('seen-v2', true); }
   load(todayIndex(), true);
 })();
 </script>
