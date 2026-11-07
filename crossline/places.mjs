@@ -1,0 +1,80 @@
+// Cities used as line endpoints, and friendlier names/aliases for the map's countries.
+
+// [city, country (as the map names it), latitude, longitude]
+export const CITIES = [
+  ["London", "United Kingdom", 51.51, -0.13], ["Edinburgh", "United Kingdom", 55.95, -3.19],
+  ["Dublin", "Ireland", 53.35, -6.26], ["Paris", "France", 48.86, 2.35], ["Marseille", "France", 43.30, 5.37],
+  ["Madrid", "Spain", 40.42, -3.70], ["Barcelona", "Spain", 41.39, 2.17], ["Seville", "Spain", 37.39, -5.98],
+  ["Lisbon", "Portugal", 38.72, -9.14], ["Amsterdam", "Netherlands", 52.37, 4.90], ["Brussels", "Belgium", 50.85, 4.35],
+  ["Berlin", "Germany", 52.52, 13.40], ["Munich", "Germany", 48.14, 11.58], ["Hamburg", "Germany", 53.55, 9.99],
+  ["Rome", "Italy", 41.90, 12.50], ["Milan", "Italy", 45.46, 9.19], ["Naples", "Italy", 40.85, 14.27],
+  ["Vienna", "Austria", 48.21, 16.37], ["Zurich", "Switzerland", 47.38, 8.54], ["Prague", "Czechia", 50.08, 14.44],
+  ["Warsaw", "Poland", 52.23, 21.01], ["Budapest", "Hungary", 47.50, 19.04], ["Bucharest", "Romania", 44.43, 26.10],
+  ["Sofia", "Bulgaria", 42.70, 23.32], ["Athens", "Greece", 37.98, 23.73], ["Belgrade", "Serbia", 44.79, 20.45],
+  ["Zagreb", "Croatia", 45.81, 15.98], ["Copenhagen", "Denmark", 55.68, 12.57], ["Oslo", "Norway", 59.91, 10.75],
+  ["Stockholm", "Sweden", 59.33, 18.07], ["Helsinki", "Finland", 60.17, 24.94], ["Reykjavik", "Iceland", 64.15, -21.94],
+  ["Tallinn", "Estonia", 59.44, 24.75], ["Riga", "Latvia", 56.95, 24.11], ["Vilnius", "Lithuania", 54.69, 25.28],
+  ["Kyiv", "Ukraine", 50.45, 30.52], ["Minsk", "Belarus", 53.90, 27.56], ["Moscow", "Russia", 55.76, 37.62],
+  ["St Petersburg", "Russia", 59.94, 30.31], ["Novosibirsk", "Russia", 55.03, 82.92], ["Vladivostok", "Russia", 43.12, 131.89],
+  ["Istanbul", "Turkey", 41.01, 28.98], ["Ankara", "Turkey", 39.93, 32.86], ["Tbilisi", "Georgia", 41.72, 44.79],
+  ["Baku", "Azerbaijan", 40.41, 49.87], ["Tehran", "Iran", 35.69, 51.39], ["Baghdad", "Iraq", 33.31, 44.36],
+  ["Riyadh", "Saudi Arabia", 24.71, 46.68], ["Jeddah", "Saudi Arabia", 21.49, 39.19], ["Dubai", "United Arab Emirates", 25.20, 55.27],
+  ["Muscat", "Oman", 23.59, 58.41], ["Amman", "Jordan", 31.95, 35.93], ["Beirut", "Lebanon", 33.89, 35.50],
+  ["Damascus", "Syria", 33.51, 36.28], ["Kabul", "Afghanistan", 34.53, 69.17], ["Tashkent", "Uzbekistan", 41.30, 69.24],
+  ["Almaty", "Kazakhstan", 43.24, 76.89], ["Astana", "Kazakhstan", 51.17, 71.45], ["Karachi", "Pakistan", 24.86, 67.01],
+  ["Lahore", "Pakistan", 31.55, 74.34], ["Delhi", "India", 28.61, 77.21], ["Mumbai", "India", 19.08, 72.88],
+  ["Kolkata", "India", 22.57, 88.36], ["Chennai", "India", 13.08, 80.27], ["Kathmandu", "Nepal", 27.72, 85.32],
+  ["Dhaka", "Bangladesh", 23.81, 90.41], ["Colombo", "Sri Lanka", 6.93, 79.86], ["Yangon", "Myanmar", 16.84, 96.17],
+  ["Bangkok", "Thailand", 13.76, 100.50], ["Hanoi", "Vietnam", 21.03, 105.85], ["Ho Chi Minh City", "Vietnam", 10.82, 106.63],
+  ["Kuala Lumpur", "Malaysia", 3.14, 101.69], ["Jakarta", "Indonesia", -6.21, 106.85], ["Manila", "Philippines", 14.60, 120.98],
+  ["Beijing", "China", 39.90, 116.41], ["Shanghai", "China", 31.23, 121.47], ["Chengdu", "China", 30.57, 104.07],
+  ["Urumqi", "China", 43.83, 87.62], ["Hong Kong", "China", 22.32, 114.17], ["Seoul", "South Korea", 37.57, 126.98],
+  ["Tokyo", "Japan", 35.68, 139.69], ["Osaka", "Japan", 34.69, 135.50], ["Ulaanbaatar", "Mongolia", 47.89, 106.91],
+  ["Taipei", "Taiwan", 25.03, 121.57], ["Sydney", "Australia", -33.87, 151.21], ["Melbourne", "Australia", -37.81, 144.96],
+  ["Perth", "Australia", -31.95, 115.86], ["Darwin", "Australia", -12.46, 130.84], ["Auckland", "New Zealand", -36.85, 174.76],
+  ["Port Moresby", "Papua New Guinea", -9.44, 147.18],
+  ["Cairo", "Egypt", 30.04, 31.24], ["Alexandria", "Egypt", 31.20, 29.92], ["Tripoli", "Libya", 32.89, 13.19],
+  ["Tunis", "Tunisia", 36.81, 10.18], ["Algiers", "Algeria", 36.75, 3.06], ["Casablanca", "Morocco", 33.57, -7.59],
+  ["Marrakesh", "Morocco", 31.63, -8.01], ["Dakar", "Senegal", 14.72, -17.47], ["Bamako", "Mali", 12.64, -8.00],
+  ["Abidjan", "Côte d'Ivoire", 5.36, -4.01], ["Accra", "Ghana", 5.60, -0.19], ["Lagos", "Nigeria", 6.52, 3.38],
+  ["Abuja", "Nigeria", 9.08, 7.40], ["Niamey", "Niger", 13.51, 2.11], ["N'Djamena", "Chad", 12.13, 15.06],
+  ["Khartoum", "Sudan", 15.50, 32.56], ["Addis Ababa", "Ethiopia", 9.03, 38.74], ["Nairobi", "Kenya", -1.29, 36.82],
+  ["Kampala", "Uganda", 0.35, 32.58], ["Kinshasa", "Dem. Rep. Congo", -4.44, 15.27], ["Luanda", "Angola", -8.84, 13.23],
+  ["Dar es Salaam", "Tanzania", -6.79, 39.21], ["Lusaka", "Zambia", -15.39, 28.32], ["Harare", "Zimbabwe", -17.83, 31.05],
+  ["Johannesburg", "South Africa", -26.20, 28.05], ["Cape Town", "South Africa", -33.92, 18.42], ["Windhoek", "Namibia", -22.56, 17.08],
+  ["Antananarivo", "Madagascar", -18.88, 47.51], ["Maputo", "Mozambique", -25.97, 32.57],
+  ["New York", "United States of America", 40.71, -74.01], ["Washington", "United States of America", 38.91, -77.04],
+  ["Chicago", "United States of America", 41.88, -87.63], ["Miami", "United States of America", 25.76, -80.19],
+  ["Houston", "United States of America", 29.76, -95.37], ["Denver", "United States of America", 39.74, -104.99],
+  ["Los Angeles", "United States of America", 34.05, -118.24], ["Seattle", "United States of America", 47.61, -122.33],
+  ["Anchorage", "United States of America", 61.22, -149.90], ["Toronto", "Canada", 43.65, -79.38],
+  ["Montreal", "Canada", 45.50, -73.57], ["Vancouver", "Canada", 49.28, -123.12], ["Winnipeg", "Canada", 49.90, -97.14],
+  ["Mexico City", "Mexico", 19.43, -99.13], ["Monterrey", "Mexico", 25.69, -100.32], ["Guatemala City", "Guatemala", 14.63, -90.51],
+  ["Havana", "Cuba", 23.11, -82.37], ["Panama City", "Panama", 8.98, -79.52], ["Bogotá", "Colombia", 4.71, -74.07],
+  ["Caracas", "Venezuela", 10.48, -66.90], ["Quito", "Ecuador", -0.18, -78.47], ["Lima", "Peru", -12.05, -77.04],
+  ["La Paz", "Bolivia", -16.49, -68.12], ["Santiago", "Chile", -33.45, -70.67], ["Buenos Aires", "Argentina", -34.60, -58.38],
+  ["Montevideo", "Uruguay", -34.90, -56.16], ["Asunción", "Paraguay", -25.26, -57.58], ["São Paulo", "Brazil", -23.55, -46.63],
+  ["Rio de Janeiro", "Brazil", -22.91, -43.17], ["Manaus", "Brazil", -3.12, -60.02], ["Brasília", "Brazil", -15.79, -47.88],
+  ["Recife", "Brazil", -8.05, -34.88], ["Nuuk", "Greenland", 64.18, -51.72],
+];
+
+// Map name -> name shown to players. Anything not listed keeps the map's name.
+export const NAMES = {
+  "United States of America": "United States", "Dem. Rep. Congo": "DR Congo", "Congo": "Republic of the Congo",
+  "Dominican Rep.": "Dominican Republic", "Central African Rep.": "Central African Republic",
+  "Eq. Guinea": "Equatorial Guinea", "Bosnia and Herz.": "Bosnia and Herzegovina", "S. Sudan": "South Sudan",
+  "W. Sahara": "Western Sahara", "Falkland Is.": "Falkland Islands", "Solomon Is.": "Solomon Islands",
+  "Fr. S. Antarctic Lands": "French Southern Lands", "Macedonia": "North Macedonia", "eSwatini": "Eswatini",
+};
+// Pieces of the map merged into a neighbour for the game.
+export const MERGE = { "N. Cyprus": "Cyprus", "Somaliland": "Somalia" };
+
+// Other names players might type.
+export const ALIASES = {
+  "United States": ["USA", "US", "America", "United States of America"], "United Kingdom": ["UK", "Britain", "Great Britain", "England", "Scotland", "Wales"],
+  "DR Congo": ["DRC", "Democratic Republic of the Congo", "Zaire", "Congo-Kinshasa"], "Republic of the Congo": ["Congo", "Congo-Brazzaville"],
+  "Côte d'Ivoire": ["Ivory Coast", "Cote d'Ivoire"], "Czechia": ["Czech Republic"], "Myanmar": ["Burma"], "Eswatini": ["Swaziland"],
+  "North Macedonia": ["Macedonia"], "Netherlands": ["Holland"], "Timor-Leste": ["East Timor"], "United Arab Emirates": ["UAE"],
+  "South Korea": ["Korea"], "Türkiye": [], "Turkey": ["Türkiye"], "Bosnia and Herzegovina": ["Bosnia"],
+  "Central African Republic": ["CAR"], "Palestine": ["Palestinian Territories"],
+};

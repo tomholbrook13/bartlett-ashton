@@ -1,0 +1,407 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Crossline</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Martian+Mono:wght@400;600;800&family=Figtree:wght@400;500;700&display=swap">
+<style>
+/* Layout: one column. A globe framed on today's route, the route's stops underneath as a row of slots, then the guess box. */
+:root {
+  --bg: #eceef0;
+  --panel: #f8f9fa;
+  --ink: #1d232b;
+  --muted: #5b6573;
+  --line: #c8ced6;
+  --sea: #dfe9f2;
+  --land: #f4f1ea;
+  --border: #a9b4c0;
+  --route: #d2452b;
+  --route-soft: #f8dcd5;
+  --found: #2f7d5b;
+  --found-soft: #cfe9dc;
+  --miss: #8b95a3;
+  --miss-soft: #dde1e6;
+  --ends: #e6d9b8;
+  --help: #6c55b8;
+  --help-soft: #e5dff7;
+  --warn: #a2471f;
+  --shadow: 0 1px 0 rgba(255,255,255,.7) inset, 0 2px 0 rgba(29,35,43,.08);
+  --f-mono: "Martian Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+  --f-body: "Figtree", system-ui, -apple-system, "Segoe UI", sans-serif;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #12161b; --panel: #1a1f26; --ink: #e6eaef; --muted: #98a3b1; --line: #2c3440;
+    --sea: #17222e; --land: #2a3039; --border: #4a5563; --route: #ff7a5c; --route-soft: #4a221a;
+    --found: #5cc796; --found-soft: #1d4a37; --miss: #6b7685; --miss-soft: #333a44; --ends: #4a4230;
+    --help: #a893f0; --help-soft: #2a2347; --warn: #f08a5d;
+    --shadow: 0 1px 0 rgba(255,255,255,.05) inset, 0 2px 0 rgba(0,0,0,.35);
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #12161b; --panel: #1a1f26; --ink: #e6eaef; --muted: #98a3b1; --line: #2c3440;
+  --sea: #17222e; --land: #2a3039; --border: #4a5563; --route: #ff7a5c; --route-soft: #4a221a;
+  --found: #5cc796; --found-soft: #1d4a37; --miss: #6b7685; --miss-soft: #333a44; --ends: #4a4230;
+  --help: #a893f0; --help-soft: #2a2347; --warn: #f08a5d;
+  --shadow: 0 1px 0 rgba(255,255,255,.05) inset, 0 2px 0 rgba(0,0,0,.35);
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html { padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px); }
+body {
+  margin: 0; background: var(--bg); color: var(--ink); font-family: var(--f-body); font-size: 16px; line-height: 1.5;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 20px 40px;
+}
+.wrap { max-width: 620px; margin: 0 auto; display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; }
+.home { justify-self: start; font-size: .85rem; font-weight: 600; color: var(--muted); text-decoration: none; margin-bottom: -10px; }
+.home:hover { color: var(--route); }
+.home:focus-visible, .btn:focus-visible, input:focus-visible { outline: 2px solid var(--route); outline-offset: 2px; border-radius: 4px; }
+
+header { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+h1 { font-family: var(--f-mono); font-weight: 800; font-size: 1.6rem; letter-spacing: .02em; margin: 0; }
+h1 span { color: var(--route); }
+.meta { font-family: var(--f-mono); font-size: .72rem; color: var(--muted); letter-spacing: .06em; text-transform: uppercase; }
+
+.howto { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 4px 16px; }
+.howto summary { cursor: pointer; font-weight: 700; padding: 10px 0; }
+.howto ol { margin: 0 0 12px; padding-left: 20px; display: grid; gap: 6px; color: var(--muted); }
+.howto b { color: var(--ink); }
+
+/* The map */
+.mapcard { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 12px; display: grid; gap: 10px; box-shadow: var(--shadow); }
+.trip { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
+.trip b { font-family: var(--f-mono); font-size: .95rem; }
+.trip b span { color: var(--route); }
+.trip small { color: var(--muted); font-size: .8rem; font-variant-numeric: tabular-nums; }
+svg.map { width: 100%; height: auto; display: block; border-radius: 10px; touch-action: manipulation; }
+.sphere { fill: var(--sea); stroke: var(--line); }
+.grat { fill: none; stroke: var(--border); stroke-opacity: .25; stroke-width: .5; }
+.country { fill: var(--land); stroke: var(--border); stroke-width: .6; cursor: pointer; transition: fill .2s; }
+.country:hover { fill: var(--route-soft); }
+.country.end { fill: var(--ends); cursor: default; }
+.country.found { fill: var(--found-soft); stroke: var(--found); }
+.country.helped { fill: var(--help-soft); stroke: var(--help); }
+.country.miss { fill: var(--miss-soft); }
+.route { fill: none; stroke: var(--route); stroke-width: 3.5; stroke-linecap: round; stroke-dasharray: 6 5; pointer-events: none; }
+.dot { fill: var(--route); stroke: var(--panel); stroke-width: 2; pointer-events: none; }
+.label { font: 700 18px var(--f-body); fill: var(--ink); paint-order: stroke; stroke: var(--panel); stroke-width: 4px; stroke-linejoin: round; pointer-events: none; }
+
+/* The route's stops */
+.stops { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.stop { font-size: .85rem; padding: 5px 9px; border-radius: 999px; border: 1px dashed var(--border); color: var(--muted); font-variant-numeric: tabular-nums; }
+.stop.end { border-style: solid; background: var(--ends); color: var(--ink); border-color: transparent; font-weight: 600; }
+.stop.found { border-style: solid; background: var(--found-soft); color: var(--found); border-color: transparent; font-weight: 600; }
+.stop.helped { border-style: solid; background: var(--help-soft); color: var(--help); border-color: transparent; font-weight: 600; }
+.arrow { color: var(--muted); font-size: .8rem; }
+
+.guess { display: flex; gap: 8px; }
+.guess input {
+  flex: 1; min-width: 0; font: 500 1rem var(--f-body); padding: 10px 12px; border-radius: 8px;
+  border: 1px solid var(--line); background: var(--panel); color: var(--ink);
+}
+.misses { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; font-size: .85rem; color: var(--muted); }
+.misses span { padding: 3px 8px; border-radius: 999px; background: var(--miss-soft); color: var(--ink); text-decoration: line-through; text-decoration-color: var(--miss); }
+
+.msg { margin: 0; min-height: 1.5em; font-size: .95rem; color: var(--muted); }
+.msg b { color: var(--ink); }
+.msg.warn { color: var(--warn); }
+
+.actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.btn {
+  appearance: none; font: 600 .9rem/1 var(--f-body); padding: 11px 14px; border-radius: 8px; cursor: pointer;
+  border: 1px solid var(--line); background: var(--panel); color: var(--ink);
+}
+.btn:hover { border-color: var(--route); }
+.btn.primary { background: var(--route); border-color: var(--route); color: var(--panel); }
+.btn:disabled { opacity: .45; cursor: default; }
+
+.result { background: var(--panel); border: 1px solid var(--found); border-radius: 10px; padding: 16px; display: grid; gap: 12px; }
+.result h2 { margin: 0; font-family: var(--f-mono); font-size: 1.05rem; color: var(--found); }
+.share { font-family: var(--f-mono); font-size: .8rem; white-space: pre; background: var(--bg); border: 1px solid var(--line); border-radius: 6px; padding: 10px; overflow-x: auto; margin: 0; }
+.small { font-size: .85rem; color: var(--muted); margin: 0; }
+.stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; text-align: center; }
+.stats b { display: block; font-family: var(--f-mono); font-size: 1.2rem; }
+.stats small { font-size: .7rem; color: var(--muted); text-transform: uppercase; letter-spacing: .08em; }
+.toast { position: fixed; left: 50%; bottom: calc(24px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%);
+  background: var(--ink); color: var(--bg); padding: 8px 14px; border-radius: 6px; font-size: .9rem; }
+</style>
+
+<div class="wrap">
+  <a class="home" href="../index.html">← All puzzles</a>
+  <header>
+    <h1>CROSS<span>LINE</span></h1>
+    <div class="meta" id="meta">No. 1</div>
+  </header>
+
+  <details class="howto" id="howto">
+    <summary>How to play</summary>
+    <ol>
+      <li>Two cities are joined by the <b>shortest route over the globe</b>, the way a plane would fly.</li>
+      <li>Find <b>every country the line passes through</b> on the way. The cities' own countries are given.</li>
+      <li><b>Tap a country</b> on the map, or type its name. Small countries are easier to type.</li>
+      <li>Wrong guesses count as misses. Stuck? <b>Hint</b> reveals the next country along the route.</li>
+    </ol>
+  </details>
+
+  <section class="mapcard">
+    <div class="trip"><b id="trip">…</b><small id="dist"></small></div>
+    <svg class="map" id="map" role="img" aria-label="Map of today's route"></svg>
+    <div class="stops" id="stops" aria-label="Countries along the route"></div>
+  </section>
+
+  <form class="guess" id="guessForm" autocomplete="off">
+    <input id="guessInput" list="countryList" placeholder="Type a country" aria-label="Type a country">
+    <datalist id="countryList"></datalist>
+    <button class="btn primary" type="submit">Guess</button>
+  </form>
+  <p class="msg" id="msg" aria-live="polite"></p>
+  <div class="misses" id="misses"></div>
+
+  <div class="actions"><button class="btn" id="hintBtn" type="button">Hint</button></div>
+
+  <section class="result" id="result" hidden>
+    <h2 id="resultTitle">Route complete</h2>
+    <pre class="share" id="shareText"></pre>
+    <div class="actions">
+      <button class="btn primary" id="shareBtn" type="button">Copy result</button>
+      <button class="btn" id="practiceBtn" type="button">Practice route</button>
+      <button class="btn" id="dailyBtn" type="button" hidden>Back to today</button>
+    </div>
+    <div class="stats" id="stats"></div>
+    <p class="small" id="next"></p>
+  </section>
+</div>
+<div class="toast" id="toast" hidden></div>
+
+<script src="https://cdn.jsdelivr.net/npm/d3-array@3.2.4/dist/d3-array.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/d3-geo@3.1.0/dist/d3-geo.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/topojson-client@3.1.0/dist/topojson-client.min.js"></script>
+<script src="world.js"></script>
+<script src="data.js"></script>
+<script>
+(() => {
+  const D = window.CROSSLINE, WORLD = window.CROSSLINE_WORLD;
+  const [sy, sm, sd] = D.start.split('-').map(Number);
+  const startUTC = Date.UTC(sy, sm - 1, sd);
+  const $ = id => document.getElementById(id);
+  const mod = (a, n) => ((a % n) + n) % n;
+  const NS = 'http://www.w3.org/2000/svg';
+  const fold = s => s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z]/g, '');
+
+  const store = {
+    get(k, d) { try { const v = localStorage.getItem('crossline:' + k); return v == null ? d : JSON.parse(v); } catch { return d; } },
+    set(k, v) { try { localStorage.setItem('crossline:' + k, JSON.stringify(v)); } catch {} },
+  };
+
+  // Countries as the game names them, with pieces merged as the generator did.
+  const nameOf = raw => D.names[D.merge[raw] || raw] || D.merge[raw] || raw;
+  const byName = new Map();
+  for (const g of WORLD.objects.countries.geometries) {
+    if (g.properties.name === 'Antarctica') continue;
+    const n = nameOf(g.properties.name);
+    if (!byName.has(n)) byName.set(n, []);
+    byName.get(n).push(g);
+  }
+  const shapes = [...byName].map(([name, geoms]) => ({ name, geo: geoms.length > 1 ? topojson.merge(WORLD, geoms) : topojson.feature(WORLD, geoms[0]).geometry }));
+  const lookup = new Map();
+  for (const { name } of shapes) {
+    lookup.set(fold(name), name);
+    for (const a of D.aliases[name] || []) lookup.set(fold(a), name);
+  }
+  $('countryList').innerHTML = [...byName.keys()].sort().map(n => `<option value="${n}">`).join('');
+
+  function todayIndex() {
+    const now = new Date();
+    const day = Math.round((Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()) - startUTC) / 864e5);
+    return mod(day, D.puzzles.length);
+  }
+
+  let P, A, B, game, daily = true, timer = null, paths = new Map();
+
+  function load(index, isDaily) {
+    daily = isDaily;
+    P = D.puzzles[index]; A = D.cities[P.a]; B = D.cities[P.b];
+    game = (isDaily && store.get('day-' + index, null)) || { index, found: [], helped: [], misses: [], log: [], ms: 0, done: false };
+    $('meta').textContent = isDaily ? `No. ${index + 1} · ${new Date().toLocaleDateString(undefined, { day: 'numeric', month: 'short' })}` : 'Practice';
+    $('dailyBtn').hidden = isDaily;
+    $('result').hidden = true;
+    $('trip').innerHTML = `${A[0]} <span>→</span> ${B[0]}`;
+    $('dist').textContent = `${P.km.toLocaleString()} km`;
+    say(game.found.length + game.misses.length ? '' : `Find the ${P.path.length} countries between ${A[1]} and ${B[1]}.`);
+    drawMap();
+    render();
+    if (game.done) finish(false); else startClock();
+  }
+
+  // ----- Map: a globe turned to face the route and zoomed to fit it -----
+  function drawMap() {
+    const svg = $('map'), W = 600, H = 420;
+    svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+    svg.innerHTML = '';
+    const a = [A[3], A[2]], b = [B[3], B[2]];
+    const mid = d3.geoInterpolate(a, b)(0.5);
+    const radius = d3.geoDistance(a, b) * 90 / Math.PI * 1.25 + 4;   // half the route, in degrees, plus margin
+    const proj = d3.geoOrthographic().rotate([-mid[0], -mid[1]])
+      .fitExtent([[12, 12], [W - 12, H - 12]], d3.geoCircle().center(mid).radius(Math.min(radius, 89))());
+    const path = d3.geoPath(proj);
+    const el = (tag, attrs, parent = svg) => { const e = document.createElementNS(NS, tag); for (const k in attrs) e.setAttribute(k, attrs[k]); parent.append(e); return e; };
+    el('path', { d: path({ type: 'Sphere' }), class: 'sphere' });
+    el('path', { d: path(d3.geoGraticule10()), class: 'grat' });
+    paths = new Map();
+    for (const s of shapes) {
+      const d = path(s.geo);
+      if (!d) continue;
+      const p = el('path', { d, class: 'country', 'data-name': s.name });
+      const t = document.createElementNS(NS, 'title'); t.textContent = s.name; p.append(t);
+      p.addEventListener('click', () => guess(s.name, true));
+      paths.set(s.name, p);
+    }
+    el('path', { d: path({ type: 'LineString', coordinates: [a, b] }), class: 'route' });
+    for (const [c, anchor] of [[A, a], [B, b]]) {
+      const [x, y] = proj(anchor);
+      el('circle', { cx: x, cy: y, r: 7, class: 'dot' });
+      const left = x > W - 150;
+      const t = el('text', { x: left ? x - 11 : x + 11, y: y - 10, class: 'label', 'text-anchor': left ? 'end' : 'start' });
+      t.textContent = c[0];
+    }
+  }
+
+  // ----- Guessing -----
+  function guess(name, fromMap) {
+    if (game.done || !name) return;
+    if (name === A[1] || name === B[1]) { say(`${name} is where the route starts or ends. It's already counted.`); return; }
+    if (game.found.includes(name)) { say(`You've already found <b>${name}</b>.`); return; }
+    if (game.misses.includes(name)) { say(`<b>${name}</b> is already a miss.`); return; }
+    if (P.path.includes(name)) {
+      game.found.push(name); game.log.push('hit');
+      const left = P.path.length - game.found.length;
+      if (!left) { game.done = true; save(); finish(true); return; }
+      say(`Yes, the line crosses <b>${name}</b>. ${left} to go.`);
+    } else {
+      game.misses.push(name); game.log.push('miss');
+      say(`The line doesn't cross <b>${name}</b>.`, true);
+    }
+    if (!fromMap) $('guessInput').value = '';
+    save(); render();
+  }
+
+  $('guessForm').addEventListener('submit', e => {
+    e.preventDefault();
+    const raw = $('guessInput').value.trim();
+    if (!raw) return;
+    const name = lookup.get(fold(raw));
+    if (!name) { say(`I don't know a country called "${raw}". Pick one from the list.`, true); return; }
+    guess(name, false);
+  });
+
+  function hint() {
+    if (game.done) return;
+    const next = P.path.find(c => !game.found.includes(c));
+    game.found.push(next); game.helped.push(next); game.log.push('hint');
+    const left = P.path.length - game.found.length;
+    if (!left) { game.done = true; save(); finish(true); return; }
+    say(`The line crosses <b>${next}</b>. ${left} to go.`);
+    save(); render();
+  }
+
+  // ----- View -----
+  function say(html, warn = false) { $('msg').innerHTML = html; $('msg').classList.toggle('warn', warn); }
+
+  function render() {
+    for (const [name, p] of paths) {
+      p.classList.toggle('end', name === A[1] || name === B[1]);
+      p.classList.toggle('found', game.found.includes(name) && !game.helped.includes(name));
+      p.classList.toggle('helped', game.helped.includes(name));
+      p.classList.toggle('miss', game.misses.includes(name));
+    }
+    const stop = (cls, text) => `<span class="stop ${cls}">${text}</span>`;
+    const route = P.path.map((c, i) => game.found.includes(c) ? stop(game.helped.includes(c) ? 'helped' : 'found', c) : stop('', '?'));
+    $('stops').innerHTML = [stop('end', A[1]), ...route, stop('end', B[1])].join('<span class="arrow">→</span>');
+    $('misses').innerHTML = game.misses.length ? `Misses: ${game.misses.map(m => `<span>${m}</span>`).join('')}` : '';
+    $('hintBtn').disabled = game.done;
+    $('guessInput').disabled = game.done;
+  }
+
+  function fmt(ms) { const s = Math.floor(ms / 1000); return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`; }
+  function startClock() {
+    clearInterval(timer);
+    let t = Date.now();
+    timer = setInterval(() => {
+      if (document.hidden || game.done) { t = Date.now(); return; }
+      const now = Date.now(); game.ms += now - t; t = now;
+    }, 500);
+  }
+  function save() { if (daily) store.set('day-' + game.index, game); }
+
+  // ----- Finish -----
+  function shareText() {
+    const squares = game.log.map(x => x === 'hit' ? '🟩' : x === 'hint' ? '🟪' : '🟥').join('');
+    const head = daily ? `Crossline No. ${game.index + 1}` : 'Crossline (practice)';
+    return `${head} · ${A[0]} → ${B[0]}\n${squares}\n${fmt(game.ms)}`;
+  }
+
+  function finish(fresh) {
+    clearInterval(timer);
+    render();
+    const m = game.misses.length, h = game.helped.length;
+    $('resultTitle').textContent = h ? `Route complete, with ${h} hint${h > 1 ? 's' : ''}` : m ? `Route complete, ${m} miss${m > 1 ? 'es' : ''}` : 'Perfect route';
+    say(`${A[0]} → ${[...P.path].join(' → ')} → ${B[0]}`);
+    $('shareText').textContent = shareText();
+    if (daily && fresh) recordStats(!m && !h);
+    renderStats();
+    $('result').hidden = false;
+    if (fresh) $('result').scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'nearest' });
+  }
+
+  function recordStats(perfect) {
+    const s = store.get('stats', { played: 0, streak: 0, best: 0, last: null, perfect: 0 });
+    if (s.last === game.index) return;
+    s.played++;
+    s.streak = s.last === game.index - 1 ? s.streak + 1 : 1;
+    s.best = Math.max(s.best, s.streak);
+    if (perfect) s.perfect++;
+    s.last = game.index;
+    store.set('stats', s);
+  }
+
+  function renderStats() {
+    const s = store.get('stats', { played: 0, streak: 0, perfect: 0 });
+    $('stats').hidden = !daily;
+    $('stats').innerHTML = `<div><b>${s.played}</b><small>Played</small></div><div><b>${s.streak}</b><small>Streak</small></div><div><b>${s.perfect}</b><small>Perfect</small></div>`;
+    const now = new Date(), next = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
+    const mins = Math.round((next - now) / 60000);
+    $('next').textContent = daily ? `Next route in ${Math.floor(mins / 60)}h ${mins % 60}m.` : 'Practice routes do not count toward your stats.';
+  }
+
+  function toast(msg) {
+    const t = $('toast'); t.textContent = msg; t.hidden = false;
+    clearTimeout(toast.t); toast.t = setTimeout(() => t.hidden = true, 1800);
+  }
+
+  $('hintBtn').onclick = hint;
+  $('practiceBtn').onclick = () => load(Math.floor(Math.random() * D.puzzles.length), false);
+  $('dailyBtn').onclick = () => load(todayIndex(), true);
+  $('shareBtn').onclick = () => {
+    const text = $('shareText').textContent;
+    const p = navigator.clipboard?.writeText(text);
+    if (p) p.then(() => toast('Copied'), selectShare); else selectShare();
+  };
+  function selectShare() {
+    const range = document.createRange(); range.selectNodeContents($('shareText'));
+    const sel = getSelection(); sel.removeAllRanges(); sel.addRange(range);
+    toast('Selected. Copy it from here.');
+  }
+
+  if (!store.get('seen', false)) { $('howto').open = true; store.set('seen', true); }
+  load(todayIndex(), true);
+})();
+</script>
