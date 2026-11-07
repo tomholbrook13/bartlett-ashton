@@ -1,4 +1,4 @@
-# Whittle
+# Snowball
 
 A daily word builder. Today's 8-letter word is hidden in a bag of its letters.
 Make any 3-letter word from the bag, then grow it one letter at a time: keep
