@@ -66,16 +66,16 @@ h1 { margin: 0; font-family: var(--f-mono); font-weight: 800; font-size: clamp(1
 .games { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr)); gap: 14px; }
 .game {
   --c: var(--ink); --c-soft: var(--line);
-  display: grid; gap: 14px; align-content: start; padding: 18px; border-radius: 14px; text-decoration: none; color: inherit;
+  display: flex; flex-direction: column; gap: 14px; padding: 18px; border-radius: 14px; text-decoration: none; color: inherit;
   background: var(--panel); border: 1px solid var(--line); box-shadow: var(--shadow);
   transition: border-color .15s, transform .15s;
 }
 .game:hover { border-color: var(--c); transform: translateY(-2px); }
 .game:focus-visible { outline: 2px solid var(--c); outline-offset: 3px; }
 .game.tombler { --c: var(--brass); --c-soft: var(--brass-soft); }
-.game.whittle { --c: var(--teal); --c-soft: var(--teal-soft); }
-.game.hidden { --c: var(--blue); --c-soft: var(--mark); }
-.game.hidden h2 span { background: var(--mark); color: var(--mark-ink); padding: 0 .1em; border-radius: 3px; }
+.game.snowball { --c: var(--teal); --c-soft: var(--teal-soft); }
+.game.stowaway { --c: var(--blue); --c-soft: var(--mark); }
+.game.stowaway h2 span { background: var(--mark); color: var(--mark-ink); padding: 0 .1em; border-radius: 3px; }
 .game.splice { --c: var(--pink); --c-soft: var(--pink-soft); }
 .game.splice h2 .b { color: var(--sky); }
 .cell.pk { background: var(--pink-soft); color: var(--pink); border-color: transparent; }
@@ -98,7 +98,7 @@ h1 { margin: 0; font-family: var(--f-mono); font-weight: 800; font-size: clamp(1
 .cell.arrow { background: none; border: none; color: var(--muted); width: 14px; }
 .cell.empty { border-style: dashed; background: none; }
 
-.foot { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; padding-top: 12px; border-top: 1px dashed var(--line); }
+.foot { margin-top: auto; display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; padding-top: 12px; border-top: 1px dashed var(--line); }
 .chip { font-family: var(--f-mono); font-size: .72rem; letter-spacing: .04em; padding: 4px 8px; border-radius: 999px; border: 1px solid var(--line); color: var(--muted); white-space: nowrap; }
 .chip.done { border-color: var(--done); color: var(--done); }
 .chip.going { border-color: var(--c); color: var(--c); }
@@ -116,19 +116,17 @@ h1 { margin: 0; font-family: var(--f-mono); font-weight: 800; font-size: clamp(1
   </header>
 
   <main class="games">
-    <a class="game tombler" href="tombler/index.html" data-game="tombler">
-      <h2>T<span>O</span>MBLER</h2>
+    <a class="game splice" href="splice/index.html" data-game="splice">
+      <h2>S<span>P</span>LI<span class="b">C</span>E</h2>
       <div class="pic" aria-hidden="true">
-        <div class="row"><span class="cell arrow">‹</span><span class="cell on">c</span><span class="cell">s</span><span class="cell">c</span><span class="cell">t</span><span class="cell">n</span><span class="cell arrow">›</span></div>
-        <div class="row"><span class="cell arrow">‹</span><span class="cell on">l</span><span class="cell">e</span><span class="cell">h</span><span class="cell">i</span><span class="cell">e</span><span class="cell arrow">›</span></div>
-        <div class="row"><span class="cell arrow">‹</span><span class="cell on">a</span><span class="cell">n</span><span class="cell">e</span><span class="cell">g</span><span class="cell">v</span><span class="cell arrow">›</span></div>
+        <div class="row"><span class="cell sk">f</span><span class="cell pk">f</span><span class="cell pk">u</span><span class="cell sk">a</span><span class="cell sk">r</span><span class="cell pk">l</span><span class="cell sk">m</span><span class="cell pk">l</span></div>
       </div>
-      <p>Turn rings of letters to spell five hidden words down the columns, one at a time.</p>
+      <p>Pull apart three strips of woven letters into the two words inside each one.</p>
       <div class="foot"><span class="chip" data-status>Not started</span><span class="meta" data-meta></span><span class="play">Play →</span></div>
     </a>
 
-    <a class="game whittle" href="whittle/index.html" data-game="whittle">
-      <h2>WH<span>I</span>TTLE</h2>
+    <a class="game snowball" href="snowball/index.html" data-game="snowball">
+      <h2>SN<span>O</span>WBALL</h2>
       <div class="pic" aria-hidden="true">
         <div class="row"><span class="cell on">s</span><span class="cell on">i</span><span class="cell on">n</span></div>
         <div class="row"><span class="cell on">s</span><span class="cell on">i</span><span class="cell on">g</span><span class="cell on">n</span></div>
@@ -138,19 +136,21 @@ h1 { margin: 0; font-family: var(--f-mono); font-weight: 800; font-size: clamp(1
       <div class="foot"><span class="chip" data-status>Not started</span><span class="meta" data-meta></span><span class="play">Play →</span></div>
     </a>
 
-    <a class="game hidden" href="hidden/index.html" data-game="hidden">
-      <h2>H<span>IDD</span>EN</h2>
+    <a class="game stowaway" href="stowaway/index.html" data-game="stowaway">
+      <h2>STOW<span>AWAY</span></h2>
       <div class="pic line" aria-hidden="true">…pink items for the catc<mark>her on</mark>ly. "Sl<mark>ow l</mark>earners," he grinned.</div>
       <p>Find the themed words hiding across the gaps in a short paragraph.</p>
       <div class="foot"><span class="chip" data-status>Not started</span><span class="meta" data-meta></span><span class="play">Play →</span></div>
     </a>
 
-    <a class="game splice" href="splice/index.html" data-game="splice">
-      <h2>S<span>P</span>LI<span class="b">C</span>E</h2>
+    <a class="game tombler" href="tombler/index.html" data-game="tombler">
+      <h2>T<span>O</span>MBLER</h2>
       <div class="pic" aria-hidden="true">
-        <div class="row"><span class="cell sk">f</span><span class="cell pk">f</span><span class="cell pk">u</span><span class="cell sk">a</span><span class="cell sk">r</span><span class="cell pk">l</span><span class="cell sk">m</span><span class="cell pk">l</span></div>
+        <div class="row"><span class="cell arrow">‹</span><span class="cell on">c</span><span class="cell">s</span><span class="cell">c</span><span class="cell">t</span><span class="cell">n</span><span class="cell arrow">›</span></div>
+        <div class="row"><span class="cell arrow">‹</span><span class="cell on">l</span><span class="cell">e</span><span class="cell">h</span><span class="cell">i</span><span class="cell">e</span><span class="cell arrow">›</span></div>
+        <div class="row"><span class="cell arrow">‹</span><span class="cell on">a</span><span class="cell">n</span><span class="cell">e</span><span class="cell">g</span><span class="cell">v</span><span class="cell arrow">›</span></div>
       </div>
-      <p>Pull apart three strips of woven letters into the two words inside each one.</p>
+      <p>Turn rings of letters to spell five hidden words down the columns, one at a time.</p>
       <div class="foot"><span class="chip" data-status>Not started</span><span class="meta" data-meta></span><span class="play">Play →</span></div>
     </a>
   </main>
@@ -163,9 +163,9 @@ h1 { margin: 0; font-family: var(--f-mono); font-weight: 800; font-size: clamp(1
   // Each game numbers its puzzles from its own start date and keeps progress under its own prefix.
   const GAMES = {
     tombler: { start: '2026-11-06', length: 730, save: i => 'tombler:v2-day-' + i, stats: 'tombler:stats', progress: g => g.locked && g.locked.length },
-    whittle: { start: '2026-11-07', length: 730, save: i => 'whittle:day-' + i, stats: 'whittle:stats', progress: g => g.chain && g.chain.length },
+    snowball: { start: '2026-11-07', length: 730, save: i => 'snowball:day-' + i, stats: 'snowball:stats', progress: g => g.chain && g.chain.length },
     splice: { start: '2026-11-07', length: 730, save: i => 'splice:day-' + i, stats: 'splice:stats', progress: g => g.strips && g.strips.some(x => x.solved || x.pick.some(Boolean)) },
-    hidden: { start: '2026-11-07', length: 14, save: i => 'hidden:day-' + i, stats: 'hidden:stats', progress: g => g.found && g.found.length },
+    stowaway: { start: '2026-11-07', length: 14, save: i => 'stowaway:day-' + i, stats: 'stowaway:stats', progress: g => g.found && g.found.length },
   };
   const read = k => { try { return JSON.parse(localStorage.getItem(k)); } catch { return null; } };
   const now = new Date();
