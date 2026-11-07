@@ -1,0 +1,368 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Splice</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Martian+Mono:wght@400;600;800&family=Figtree:wght@400;500;700&display=swap">
+<style>
+/* Layout: one narrow column of three cards, shortest first. Each card is a woven strip of letters with the two strands it unpicks into underneath. */
+:root {
+  --bg: #eeedf0;
+  --panel: #faf9fb;
+  --ink: #23202a;
+  --muted: #615c6c;
+  --line: #ccc8d3;
+  --tile: #ffffff;
+  --tile-edge: #bdb7c6;
+  --a: #b4236b;
+  --a-soft: #f7d9e7;
+  --b: #1f6fa8;
+  --b-soft: #d6e7f5;
+  --ok: #2f7d5b;
+  --warn: #a2471f;
+  --help: #6c55b8;
+  --shadow: 0 1px 0 rgba(255,255,255,.7) inset, 0 2px 0 rgba(35,32,42,.08);
+  --f-mono: "Martian Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+  --f-body: "Figtree", system-ui, -apple-system, "Segoe UI", sans-serif;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #151419; --panel: #1d1b22; --ink: #ebe8f0; --muted: #a29cae; --line: #312d39; --tile: #25222b; --tile-edge: #403a4a;
+    --a: #f27bb2; --a-soft: #45162f; --b: #6fb6ee; --b-soft: #142f45; --ok: #5cc796; --warn: #f08a5d; --help: #a893f0;
+    --shadow: 0 1px 0 rgba(255,255,255,.05) inset, 0 2px 0 rgba(0,0,0,.35);
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #151419; --panel: #1d1b22; --ink: #ebe8f0; --muted: #a29cae; --line: #312d39; --tile: #25222b; --tile-edge: #403a4a;
+  --a: #f27bb2; --a-soft: #45162f; --b: #6fb6ee; --b-soft: #142f45; --ok: #5cc796; --warn: #f08a5d; --help: #a893f0;
+  --shadow: 0 1px 0 rgba(255,255,255,.05) inset, 0 2px 0 rgba(0,0,0,.35);
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html { padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px); }
+body {
+  margin: 0; background: var(--bg); color: var(--ink); font-family: var(--f-body); font-size: 16px; line-height: 1.5;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 20px 40px;
+}
+.wrap { max-width: 480px; margin: 0 auto; display: grid; gap: 18px; }
+.home { justify-self: start; font-size: .85rem; font-weight: 600; color: var(--muted); text-decoration: none; margin-bottom: -10px; }
+.home:hover { color: var(--a); }
+.home:focus-visible, .btn:focus-visible, .tile:focus-visible { outline: 2px solid var(--b); outline-offset: 2px; border-radius: 4px; }
+
+header { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+h1 { font-family: var(--f-mono); font-weight: 800; font-size: 1.6rem; letter-spacing: .02em; margin: 0; }
+h1 .a { color: var(--a); } h1 .b { color: var(--b); }
+.meta { font-family: var(--f-mono); font-size: .72rem; color: var(--muted); letter-spacing: .06em; text-transform: uppercase; }
+
+.howto { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 4px 16px; }
+.howto summary { cursor: pointer; font-weight: 700; padding: 10px 0; }
+.howto ol { margin: 0 0 12px; padding-left: 20px; display: grid; gap: 6px; color: var(--muted); }
+.howto b { color: var(--ink); }
+.howto .a { color: var(--a); font-weight: 700; } .howto .b { color: var(--b); font-weight: 700; }
+
+/* A splice card */
+.card { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 14px; display: grid; gap: 12px; box-shadow: var(--shadow); }
+.card.solved { border-color: var(--ok); }
+.card.shake { animation: shake .3s; }
+@keyframes shake { 25% { transform: translateX(-5px); } 75% { transform: translateX(5px); } }
+.top { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+.top b { font-family: var(--f-mono); font-size: .75rem; letter-spacing: .08em; color: var(--muted); text-transform: uppercase; }
+.top .done { font-size: .85rem; color: var(--ok); font-weight: 700; }
+.strip { display: grid; gap: 3px; }
+.tile {
+  appearance: none; aspect-ratio: 1 / 1.15; min-width: 0; border-radius: 6px; cursor: pointer; padding: 0;
+  border: 1px solid var(--tile-edge); background: var(--tile); color: var(--ink);
+  font: 600 clamp(.85rem, 4.2vw, 1.2rem)/1 var(--f-mono); text-transform: uppercase;
+}
+.tile.A { background: var(--a-soft); color: var(--a); border-color: var(--a); }
+.tile.B { background: var(--b-soft); color: var(--b); border-color: var(--b); }
+.tile.locked { border-style: dashed; }
+.tile:disabled { cursor: default; }
+.strands { display: grid; gap: 6px; }
+.strand { display: grid; grid-template-columns: 12px minmax(0, 1fr); gap: 8px; align-items: center; }
+.dot { width: 12px; height: 12px; border-radius: 50%; }
+.dot.A { background: var(--a); } .dot.B { background: var(--b); }
+.slots { display: flex; gap: 3px; flex-wrap: wrap; }
+.slot { width: 26px; height: 30px; display: grid; place-items: center; border-radius: 4px; border: 1px dashed var(--line); font: 600 .85rem/1 var(--f-mono); text-transform: uppercase; }
+.strand.A .slot.f { border: 1px solid transparent; background: var(--a-soft); color: var(--a); }
+.strand.B .slot.f { border: 1px solid transparent; background: var(--b-soft); color: var(--b); }
+.slot.over { border-color: var(--warn); color: var(--warn); }
+.card .row { display: flex; gap: 8px; }
+
+.msg { margin: 0; min-height: 1.5em; font-size: .95rem; color: var(--muted); }
+.msg b { color: var(--ink); font-family: var(--f-mono); font-weight: 600; text-transform: uppercase; }
+.msg.warn { color: var(--warn); }
+
+.actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.btn {
+  appearance: none; font: 600 .9rem/1 var(--f-body); padding: 11px 14px; border-radius: 8px; cursor: pointer;
+  border: 1px solid var(--line); background: var(--panel); color: var(--ink);
+}
+.btn.small { padding: 7px 10px; font-size: .8rem; }
+.btn:hover { border-color: var(--b); }
+.btn.primary { background: var(--b); border-color: var(--b); color: var(--panel); }
+.btn:disabled { opacity: .45; cursor: default; }
+
+.result { background: var(--panel); border: 1px solid var(--ok); border-radius: 10px; padding: 16px; display: grid; gap: 12px; }
+.result h2 { margin: 0; font-family: var(--f-mono); font-size: 1.05rem; color: var(--ok); }
+.share { font-family: var(--f-mono); font-size: .8rem; white-space: pre; background: var(--bg); border: 1px solid var(--line); border-radius: 6px; padding: 10px; overflow-x: auto; margin: 0; }
+.small-note { font-size: .85rem; color: var(--muted); margin: 0; }
+.stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; text-align: center; }
+.stats b { display: block; font-family: var(--f-mono); font-size: 1.2rem; }
+.stats small { font-size: .7rem; color: var(--muted); text-transform: uppercase; letter-spacing: .08em; }
+.toast { position: fixed; left: 50%; bottom: calc(24px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%);
+  background: var(--ink); color: var(--bg); padding: 8px 14px; border-radius: 6px; font-size: .9rem; }
+@media (prefers-reduced-motion: reduce) { .card.shake { animation: none; } }
+</style>
+
+<div class="wrap">
+  <a class="home" href="../index.html">← All puzzles</a>
+  <header>
+    <h1>S<span class="a">P</span>LI<span class="b">C</span>E</h1>
+    <div class="meta" id="meta">No. 1</div>
+  </header>
+
+  <details class="howto" id="howto">
+    <summary>How to play</summary>
+    <ol>
+      <li>Each strip is <b>two words woven together</b>. Every word keeps its letters in order.</li>
+      <li>Tap a letter to put it in the <span class="a">pink</span> word, again for the <span class="b">blue</span> word, and again to clear it.</li>
+      <li>When every letter is used and both strands spell words, the strip is solved.</li>
+      <li>Three strips a day, from 4 + 4 letters up to 6 + 6. Each has only one answer.</li>
+      <li>Stuck? <b>Hint</b> places one correct letter in the first unsolved strip.</li>
+    </ol>
+  </details>
+
+  <div id="cards" style="display: grid; gap: 14px"></div>
+  <p class="msg" id="msg" aria-live="polite"></p>
+  <div class="actions"><button class="btn" id="hintBtn" type="button">Hint</button></div>
+
+  <section class="result" id="result" hidden>
+    <h2 id="resultTitle">All spliced</h2>
+    <pre class="share" id="shareText"></pre>
+    <div class="actions">
+      <button class="btn primary" id="shareBtn" type="button">Copy result</button>
+      <button class="btn" id="practiceBtn" type="button">Practice puzzle</button>
+      <button class="btn" id="dailyBtn" type="button" hidden>Back to today</button>
+    </div>
+    <div class="stats" id="stats"></div>
+    <p class="small-note" id="next"></p>
+  </section>
+</div>
+<div class="toast" id="toast" hidden></div>
+
+<script src="puzzles.js"></script>
+<script>
+(() => {
+  const DAYS = window.SPLICE_DAYS;
+  const [sy, sm, sd] = window.SPLICE_START.split('-').map(Number);
+  const startUTC = Date.UTC(sy, sm - 1, sd);
+  const $ = id => document.getElementById(id);
+  const mod = (a, n) => ((a % n) + n) % n;
+  const NEXT = { '': 'A', A: 'B', B: '' };
+
+  const store = {
+    get(k, d) { try { const v = localStorage.getItem('splice:' + k); return v == null ? d : JSON.parse(v); } catch { return d; } },
+    set(k, v) { try { localStorage.setItem('splice:' + k, JSON.stringify(v)); } catch {} },
+  };
+
+  function todayIndex() {
+    const now = new Date();
+    const day = Math.round((Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()) - startUTC) / 864e5);
+    return mod(day, DAYS.length);
+  }
+
+  let day, game, daily = true, timer = null;
+
+  function load(index, isDaily) {
+    daily = isDaily;
+    day = DAYS[index];
+    game = (isDaily && store.get('day-' + index, null)) || {
+      index, ms: 0, done: false,
+      strips: day.map(p => ({ pick: Array(p.s.length).fill(''), locked: [], hints: 0, solved: false })),
+    };
+    $('meta').textContent = isDaily ? `No. ${index + 1} · ${new Date().toLocaleDateString(undefined, { day: 'numeric', month: 'short' })}` : 'Practice';
+    $('dailyBtn').hidden = isDaily;
+    $('result').hidden = true;
+    say(game.strips.some(s => s.pick.some(Boolean)) ? '' : 'Tap letters to pull each strip apart into two words.');
+    build(); render();
+    if (game.done) finish(false); else startClock();
+  }
+
+  // The answer as A/B labels for each letter, in whichever orientation best matches the player's picks.
+  function truth(k) {
+    const p = day[k], st = game.strips[k];
+    const plain = [...p.who].map(c => c === '0' ? 'A' : 'B');
+    const flipped = plain.map(c => c === 'A' ? 'B' : 'A');
+    const agree = lab => lab.filter((c, i) => st.pick[i] === c).length;
+    return agree(flipped) > agree(plain) ? flipped : plain;
+  }
+  const strand = (k, c) => [...day[k].s].filter((_, i) => game.strips[k].pick[i] === c).join('');
+
+  function tap(k, i) {
+    const st = game.strips[k];
+    if (game.done || st.solved || st.locked.includes(i)) return;
+    st.pick[i] = NEXT[st.pick[i]];
+    afterChange(k);
+  }
+
+  function afterChange(k) {
+    const st = game.strips[k], p = day[k];
+    if (st.pick.every(Boolean)) {
+      const pair = [strand(k, 'A'), strand(k, 'B')].sort().join();
+      if (pair === [p.a, p.b].sort().join()) {
+        st.solved = true;
+        const left = game.strips.filter(s => !s.solved).length;
+        if (!left) { game.done = true; save(); finish(true); return; }
+        say(`<b>${strand(k, 'A')}</b> and <b>${strand(k, 'B')}</b>. ${left} to go.`);
+      } else {
+        say(`<b>${strand(k, 'A')}</b> and <b>${strand(k, 'B')}</b> aren't both words. Keep untangling.`, true);
+        shake(k);
+      }
+    } else say('');
+    save(); render();
+  }
+
+  function hint() {
+    if (game.done) return;
+    const k = game.strips.findIndex(s => !s.solved);
+    const st = game.strips[k], want = truth(k);
+    const i = want.findIndex((c, j) => st.pick[j] !== c);
+    if (i === -1) return;
+    st.pick[i] = want[i];
+    if (!st.locked.includes(i)) st.locked.push(i);
+    st.hints++;
+    afterChange(k);
+  }
+
+  function clear(k) {
+    const st = game.strips[k];
+    if (st.solved) return;
+    st.pick = st.pick.map((c, i) => st.locked.includes(i) ? c : '');
+    save(); render();
+  }
+
+  // ----- View -----
+  function say(html, warn = false) { $('msg').innerHTML = html; $('msg').classList.toggle('warn', warn); }
+  function shake(k) { const c = $('cards').children[k]; c.classList.remove('shake'); void c.offsetWidth; c.classList.add('shake'); }
+
+  function build() {
+    $('cards').innerHTML = day.map((p, k) => `
+      <section class="card" aria-label="Strip ${k + 1}">
+        <div class="top"><b>${p.a.length} + ${p.b.length} letters</b><span class="done" hidden>Solved ✓</span></div>
+        <div class="strip" style="grid-template-columns: repeat(${p.s.length}, minmax(0, 1fr))">
+          ${[...p.s].map((ch, i) => `<button class="tile" type="button" data-k="${k}" data-i="${i}">${ch}</button>`).join('')}
+        </div>
+        <div class="strands">
+          <div class="strand A"><span class="dot A"></span><div class="slots"></div></div>
+          <div class="strand B"><span class="dot B"></span><div class="slots"></div></div>
+        </div>
+        <div class="row"><button class="btn small" type="button" data-clear="${k}">Clear</button></div>
+      </section>`).join('');
+    $('cards').querySelectorAll('.tile').forEach(t => t.onclick = () => tap(+t.dataset.k, +t.dataset.i));
+    $('cards').querySelectorAll('[data-clear]').forEach(b => b.onclick = () => clear(+b.dataset.clear));
+  }
+
+  function render() {
+    [...$('cards').children].forEach((card, k) => {
+      const st = game.strips[k], p = day[k], n = p.a.length;
+      card.classList.toggle('solved', st.solved);
+      card.querySelector('.done').hidden = !st.solved;
+      card.querySelector('[data-clear]').parentElement.hidden = st.solved;
+      card.querySelectorAll('.tile').forEach((t, i) => {
+        t.className = 'tile' + (st.pick[i] ? ' ' + st.pick[i] : '') + (st.locked.includes(i) ? ' locked' : '');
+        t.disabled = st.solved || game.done;
+        t.setAttribute('aria-label', `${p.s[i]}, ${st.pick[i] === 'A' ? 'pink word' : st.pick[i] === 'B' ? 'blue word' : 'not placed'}`);
+      });
+      for (const c of ['A', 'B']) {
+        const w = strand(k, c);
+        card.querySelector(`.strand.${c} .slots`).innerHTML = [...Array(Math.max(n, w.length))].map((_, j) =>
+          `<span class="slot${w[j] ? ' f' : ''}${j >= n ? ' over' : ''}">${w[j] || ''}</span>`).join('');
+      }
+    });
+    $('hintBtn').disabled = game.done;
+  }
+
+  function fmt(ms) { const s = Math.floor(ms / 1000); return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`; }
+  function startClock() {
+    clearInterval(timer);
+    let t = Date.now();
+    timer = setInterval(() => {
+      if (document.hidden || game.done) { t = Date.now(); return; }
+      const now = Date.now(); game.ms += now - t; t = now;
+    }, 500);
+  }
+  function save() { if (daily) store.set('day-' + game.index, game); }
+
+  // ----- Finish -----
+  function shareText() {
+    const squares = game.strips.map(s => s.hints ? '🟪' : '🟩').join('');
+    const head = daily ? `Splice No. ${game.index + 1}` : 'Splice (practice)';
+    return `${head}\n${squares} · ${fmt(game.ms)}`;
+  }
+
+  function finish(fresh) {
+    clearInterval(timer);
+    render();
+    const hints = game.strips.reduce((s, x) => s + x.hints, 0);
+    $('resultTitle').textContent = hints ? 'All spliced, with help' : 'Clean splice';
+    say(day.map(p => `<b>${p.a}</b> + <b>${p.b}</b>`).join(' · '));
+    $('shareText').textContent = shareText();
+    if (daily && fresh) recordStats(!hints);
+    renderStats();
+    $('result').hidden = false;
+    if (fresh) $('result').scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'nearest' });
+  }
+
+  function recordStats(clean) {
+    const s = store.get('stats', { played: 0, streak: 0, best: 0, last: null, clean: 0 });
+    if (s.last === game.index) return;
+    s.played++;
+    s.streak = s.last === game.index - 1 ? s.streak + 1 : 1;
+    s.best = Math.max(s.best, s.streak);
+    if (clean) s.clean++;
+    s.last = game.index;
+    store.set('stats', s);
+  }
+
+  function renderStats() {
+    const s = store.get('stats', { played: 0, streak: 0, clean: 0 });
+    $('stats').hidden = !daily;
+    $('stats').innerHTML = `<div><b>${s.played}</b><small>Played</small></div><div><b>${s.streak}</b><small>Streak</small></div><div><b>${s.clean}</b><small>Clean</small></div>`;
+    const now = new Date(), next = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
+    const mins = Math.round((next - now) / 60000);
+    $('next').textContent = daily ? `Next strips in ${Math.floor(mins / 60)}h ${mins % 60}m.` : 'Practice puzzles do not count toward your stats.';
+  }
+
+  function toast(msg) {
+    const t = $('toast'); t.textContent = msg; t.hidden = false;
+    clearTimeout(toast.t); toast.t = setTimeout(() => t.hidden = true, 1800);
+  }
+
+  $('hintBtn').onclick = hint;
+  $('practiceBtn').onclick = () => load(Math.floor(Math.random() * DAYS.length), false);
+  $('dailyBtn').onclick = () => load(todayIndex(), true);
+  $('shareBtn').onclick = () => {
+    const text = $('shareText').textContent;
+    const p = navigator.clipboard?.writeText(text);
+    if (p) p.then(() => toast('Copied'), selectShare); else selectShare();
+  };
+  function selectShare() {
+    const range = document.createRange(); range.selectNodeContents($('shareText'));
+    const sel = getSelection(); sel.removeAllRanges(); sel.addRange(range);
+    toast('Selected. Copy it from here.');
+  }
+
+  if (!store.get('seen', false)) { $('howto').open = true; store.set('seen', true); }
+  load(todayIndex(), true);
+})();
+</script>
