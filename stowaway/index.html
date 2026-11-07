@@ -79,7 +79,14 @@ h1 span { background: var(--mark); color: var(--mark-ink); padding: 0 .1em; bord
   margin: 0; font-family: var(--f-read); font-size: clamp(1.3rem, 5.4vw, 1.6rem); line-height: 2.1; letter-spacing: .03em;
   user-select: none; -webkit-user-select: none; touch-action: none; cursor: crosshair; -webkit-tap-highlight-color: transparent;
 }
-.ch.sel { background: var(--sel); box-shadow: 0 0 0 1px var(--accent); }
+.ch { border-radius: 3px; transition: background .12s; }
+.ch.found { background: var(--mark); color: var(--mark-ink); }
+.ch.found.helped { background: var(--help-soft); color: var(--help); }
+/* Hint: the first letter of a word gets a pulsing purple ring */
+.ch.start { background: var(--help-soft); color: var(--help); box-shadow: 0 0 0 2px var(--help); animation: pulse 1.4s ease-in-out infinite; }
+@keyframes pulse { 50% { box-shadow: 0 0 0 5px color-mix(in srgb, var(--help) 35%, transparent); } }
+@media (prefers-reduced-motion: reduce) { .ch.start { animation: none; } }
+.ch.sel { background: var(--sel); color: var(--ink); box-shadow: 0 0 0 1px var(--accent); }
 
 /* Live preview of the letters being marked, floating above the finger */
 .loupe {
