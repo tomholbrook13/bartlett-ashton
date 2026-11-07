@@ -74,8 +74,8 @@ h1 { margin: 0; font-family: var(--f-mono); font-weight: 800; font-size: clamp(1
 .game:focus-visible { outline: 2px solid var(--c); outline-offset: 3px; }
 .game.tombler { --c: var(--brass); --c-soft: var(--brass-soft); }
 .game.snowball { --c: var(--teal); --c-soft: var(--teal-soft); }
-.game.hidden { --c: var(--blue); --c-soft: var(--mark); }
-.game.hidden h2 span { background: var(--mark); color: var(--mark-ink); padding: 0 .1em; border-radius: 3px; }
+.game.stowaway { --c: var(--blue); --c-soft: var(--mark); }
+.game.stowaway h2 span { background: var(--mark); color: var(--mark-ink); padding: 0 .1em; border-radius: 3px; }
 .game.splice { --c: var(--pink); --c-soft: var(--pink-soft); }
 .game.splice h2 .b { color: var(--sky); }
 .cell.pk { background: var(--pink-soft); color: var(--pink); border-color: transparent; }
@@ -136,8 +136,8 @@ h1 { margin: 0; font-family: var(--f-mono); font-weight: 800; font-size: clamp(1
       <div class="foot"><span class="chip" data-status>Not started</span><span class="meta" data-meta></span><span class="play">Play →</span></div>
     </a>
 
-    <a class="game hidden" href="hidden/index.html" data-game="hidden">
-      <h2>H<span>IDD</span>EN</h2>
+    <a class="game stowaway" href="stowaway/index.html" data-game="stowaway">
+      <h2>STOW<span>AWAY</span></h2>
       <div class="pic line" aria-hidden="true">…pink items for the catc<mark>her on</mark>ly. "Sl<mark>ow l</mark>earners," he grinned.</div>
       <p>Find the themed words hiding across the gaps in a short paragraph.</p>
       <div class="foot"><span class="chip" data-status>Not started</span><span class="meta" data-meta></span><span class="play">Play →</span></div>
@@ -165,7 +165,7 @@ h1 { margin: 0; font-family: var(--f-mono); font-weight: 800; font-size: clamp(1
     tombler: { start: '2026-11-06', length: 730, save: i => 'tombler:v2-day-' + i, stats: 'tombler:stats', progress: g => g.locked && g.locked.length },
     snowball: { start: '2026-11-07', length: 730, save: i => 'snowball:day-' + i, stats: 'snowball:stats', progress: g => g.chain && g.chain.length },
     splice: { start: '2026-11-07', length: 730, save: i => 'splice:day-' + i, stats: 'splice:stats', progress: g => g.strips && g.strips.some(x => x.solved || x.pick.some(Boolean)) },
-    hidden: { start: '2026-11-07', length: 14, save: i => 'hidden:day-' + i, stats: 'hidden:stats', progress: g => g.found && g.found.length },
+    stowaway: { start: '2026-11-07', length: 14, save: i => 'stowaway:day-' + i, stats: 'stowaway:stats', progress: g => g.found && g.found.length },
   };
   const read = k => { try { return JSON.parse(localStorage.getItem(k)); } catch { return null; } };
   const now = new Date();

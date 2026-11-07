@@ -3,7 +3,7 @@ name: Deploy games to GitHub Pages
 on:
   push:
     branches: [main]
-    paths: ["index.html", "tombler/**", "snowball/**", "whittle/**", "hidden/**", "splice/**", ".github/workflows/pages.yml"]
+    paths: ["index.html", "tombler/**", "snowball/**", "whittle/**", "stowaway/**", "hidden/**", "splice/**", ".github/workflows/pages.yml"]
   workflow_dispatch:
 
 permissions:
@@ -26,12 +26,13 @@ jobs:
       - uses: actions/configure-pages@v5
       - name: Copy site files
         run: |
-          mkdir -p _site/tombler _site/snowball _site/whittle _site/hidden _site/splice
+          mkdir -p _site/tombler _site/snowball _site/whittle _site/stowaway _site/hidden _site/splice
           cp index.html _site/
           cp tombler/index.html tombler/puzzles.js tombler/words.js _site/tombler/
           cp snowball/index.html snowball/puzzles.js snowball/words.js _site/snowball/
           cp whittle/index.html _site/whittle/
-          cp hidden/index.html hidden/puzzles.js _site/hidden/
+          cp stowaway/index.html stowaway/puzzles.js _site/stowaway/
+          cp hidden/index.html _site/hidden/
           cp splice/index.html splice/puzzles.js _site/splice/
       - uses: actions/upload-pages-artifact@v3
       - id: deployment

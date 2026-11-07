@@ -1,4 +1,4 @@
-# Hidden
+# Stowaway
 
 A daily hidden-word hunt. A short paragraph hides six to eight words on a
 theme, each running across a gap between words ("slo**w l**earners" hides
@@ -18,4 +18,4 @@ letter works too.
   common word pairs that hide HERON across the gap.
 
 To add puzzles: append to `puzzles.json`, run `python3 build.py`, and update
-`length` for Hidden in the root `index.html` so the menu shows the right number.
+`length` for Stowaway in the root `index.html` so the menu shows the right number.
