@@ -26,6 +26,9 @@
   --pink-soft: #f7d9e7;
   --sky: #1f6fa8;
   --sky-soft: #d6e7f5;
+  --route: #d2452b;
+  --route-soft: #f8dcd5;
+  --ends: #e6d9b8;
   --mark-ink: #2b2700;
   --done: #2f7d5b;
   --shadow: 0 1px 0 rgba(255,255,255,.7) inset, 0 2px 0 rgba(30,36,35,.08);
@@ -36,14 +39,14 @@
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
     --bg: #121615; --panel: #1a201f; --ink: #e5eae8; --muted: #95a29e; --line: #2d3734; --tile: #222a28;
-    --brass: #e0a947; --brass-soft: #3a2e17; --teal: #52c2b4; --teal-soft: #163530; --blue: #8aa8ff; --mark: #6b5f12; --mark-ink: #fff6c2; --pink: #f27bb2; --pink-soft: #45162f; --sky: #6fb6ee; --sky-soft: #142f45; --done: #5cc796;
+    --brass: #e0a947; --brass-soft: #3a2e17; --teal: #52c2b4; --teal-soft: #163530; --blue: #8aa8ff; --mark: #6b5f12; --mark-ink: #fff6c2; --pink: #f27bb2; --pink-soft: #45162f; --sky: #6fb6ee; --sky-soft: #142f45; --route: #ff7a5c; --route-soft: #4a221a; --ends: #4a4230; --done: #5cc796;
     --shadow: 0 1px 0 rgba(255,255,255,.05) inset, 0 2px 0 rgba(0,0,0,.35);
     color-scheme: dark;
   }
 }
 :root[data-theme="dark"] {
   --bg: #121615; --panel: #1a201f; --ink: #e5eae8; --muted: #95a29e; --line: #2d3734; --tile: #222a28;
-  --brass: #e0a947; --brass-soft: #3a2e17; --teal: #52c2b4; --teal-soft: #163530; --blue: #8aa8ff; --mark: #6b5f12; --mark-ink: #fff6c2; --pink: #f27bb2; --pink-soft: #45162f; --sky: #6fb6ee; --sky-soft: #142f45; --done: #5cc796;
+  --brass: #e0a947; --brass-soft: #3a2e17; --teal: #52c2b4; --teal-soft: #163530; --blue: #8aa8ff; --mark: #6b5f12; --mark-ink: #fff6c2; --pink: #f27bb2; --pink-soft: #45162f; --sky: #6fb6ee; --sky-soft: #142f45; --route: #ff7a5c; --route-soft: #4a221a; --ends: #4a4230; --done: #5cc796;
   --shadow: 0 1px 0 rgba(255,255,255,.05) inset, 0 2px 0 rgba(0,0,0,.35);
   color-scheme: dark;
 }
@@ -81,6 +84,11 @@ h1 { margin: 0; font-family: var(--f-mono); font-weight: 800; font-size: clamp(1
 .cell.pk { background: var(--pink-soft); color: var(--pink); border-color: transparent; }
 .cell.sk { background: var(--sky-soft); color: var(--sky); border-color: transparent; }
 .pic.line { display: block; }
+.game.crossline { --c: var(--route); --c-soft: var(--route-soft); }
+.stopline { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; font-size: .8rem; color: var(--muted); }
+.stopline span { padding: 3px 8px; border-radius: 999px; border: 1px dashed var(--line); }
+.stopline .e { background: var(--ends); color: var(--ink); border: 1px solid transparent; font-weight: 600; }
+.stopline .f { background: var(--route-soft); color: var(--route); border: 1px solid transparent; font-weight: 600; }
 .line { font-family: "Source Serif 4", Georgia, serif; font-size: 1.05rem; line-height: 1.6; }
 .line mark { background: var(--mark); color: var(--mark-ink); border-radius: 2px; }
 .game h2 { margin: 0; font-family: var(--f-mono); font-weight: 800; font-size: 1.3rem; letter-spacing: .02em; }
@@ -112,7 +120,7 @@ h1 { margin: 0; font-family: var(--f-mono); font-weight: 800; font-size: clamp(1
   <header class="mast">
     <div class="date" id="date"></div>
     <h1>Tom's Daily Puzzles</h1>
-    <p>Short word puzzles with a new one each day. Each takes a few minutes.</p>
+    <p>Short word and geography puzzles, new every day. Each takes a few minutes.</p>
   </header>
 
   <main class="games">
@@ -153,6 +161,13 @@ h1 { margin: 0; font-family: var(--f-mono); font-weight: 800; font-size: clamp(1
       <p>Turn rings of letters to spell five hidden words down the columns, one at a time.</p>
       <div class="foot"><span class="chip" data-status>Not started</span><span class="meta" data-meta></span><span class="play">Play →</span></div>
     </a>
+
+    <a class="game crossline" href="crossline/index.html" data-game="crossline">
+      <h2>CROSS<span>LINE</span></h2>
+      <div class="pic stopline" aria-hidden="true"><span class="e">Japan</span>→<span class="f">South Korea</span>→<span>?</span>→<span>?</span>→<span class="e">Pakistan</span></div>
+      <p>Two cities joined by the shortest route over the globe. Name every country the line crosses.</p>
+      <div class="foot"><span class="chip" data-status>Not started</span><span class="meta" data-meta></span><span class="play">Play →</span></div>
+    </a>
   </main>
 
   <p class="note">New puzzles every day at midnight, your time. Your progress and streaks are saved in this browser.</p>
@@ -165,6 +180,7 @@ h1 { margin: 0; font-family: var(--f-mono); font-weight: 800; font-size: clamp(1
     tombler: { start: '2026-11-06', length: 730, save: i => 'tombler:v2-day-' + i, stats: 'tombler:stats', progress: g => g.locked && g.locked.length },
     snowball: { start: '2026-11-07', length: 730, save: i => 'snowball:day-' + i, stats: 'snowball:stats', progress: g => g.chain && g.chain.length },
     splice: { start: '2026-11-07', length: 730, save: i => 'splice:day-' + i, stats: 'splice:stats', progress: g => g.strips && g.strips.some(x => x.solved || x.pick.some(Boolean)) },
+    crossline: { start: '2026-11-07', length: 365, save: i => 'crossline:day-' + i, stats: 'crossline:stats', progress: g => g.found && (g.found.length || g.misses.length) },
     stowaway: { start: '2026-11-07', length: 14, save: i => 'stowaway:day-' + i, stats: 'stowaway:stats', progress: g => g.found && g.found.length },
   };
   const read = k => { try { return JSON.parse(localStorage.getItem(k)); } catch { return null; } };
