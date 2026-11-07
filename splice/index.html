@@ -77,16 +77,24 @@ h1 .a { color: var(--a); } h1 .b { color: var(--b); }
 .top { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
 .top b { font-family: var(--f-mono); font-size: .75rem; letter-spacing: .08em; color: var(--muted); text-transform: uppercase; }
 .top .done { font-size: .85rem; color: var(--ok); font-weight: 700; }
-.strip { display: grid; gap: 3px; }
-.tile {
-  appearance: none; aspect-ratio: 1 / 1.15; min-width: 0; border-radius: 6px; cursor: pointer; padding: 0;
-  border: 1px solid var(--tile-edge); background: var(--tile); color: var(--ink);
-  font: 600 clamp(.85rem, 4.2vw, 1.2rem)/1 var(--f-mono); text-transform: uppercase;
+.board { display: grid; gap: 4px 3px; touch-action: none; user-select: none; -webkit-user-select: none; }
+.cell {
+  appearance: none; min-width: 0; height: 40px; padding: 0; border-radius: 6px; cursor: pointer;
+  font: 600 clamp(.85rem, 4.2vw, 1.2rem)/1 var(--f-mono); text-transform: uppercase; color: var(--ink);
+  border: 1px solid transparent; background: none; -webkit-tap-highlight-color: transparent;
 }
-.tile.A { background: var(--a-soft); color: var(--a); border-color: var(--a); }
-.tile.B { background: var(--b-soft); color: var(--b); border-color: var(--b); }
-.tile.locked { border-style: dashed; }
-.tile:disabled { cursor: default; }
+.cell.lane.A { background: color-mix(in srgb, var(--a-soft) 45%, transparent); }
+.cell.lane.B { background: color-mix(in srgb, var(--b-soft) 45%, transparent); }
+.cell.lane:hover:not(:disabled) { outline: 1px dashed var(--muted); outline-offset: -3px; }
+.cell.lane.A.on { background: var(--a-soft); color: var(--a); border-color: var(--a); }
+.cell.lane.B.on { background: var(--b-soft); color: var(--b); border-color: var(--b); }
+.cell.mid { background: var(--tile); border-color: var(--tile-edge); box-shadow: var(--shadow); }
+.cell.mid.gone { background: none; border: 1px dashed var(--line); box-shadow: none; color: var(--muted); opacity: .45; }
+.cell.locked { border-style: dashed; }
+.cell:disabled { cursor: default; }
+.cell:focus-visible { outline: 2px solid var(--b); outline-offset: 1px; }
+.lanehint { display: flex; justify-content: space-between; font-size: .75rem; color: var(--muted); margin-top: -6px; }
+.lanehint .a { color: var(--a); font-weight: 700; } .lanehint .b { color: var(--b); font-weight: 700; }
 .strands { display: grid; gap: 6px; }
 .strand { display: grid; grid-template-columns: 12px minmax(0, 1fr); gap: 8px; align-items: center; }
 .dot { width: 12px; height: 12px; border-radius: 50%; }
@@ -135,7 +143,8 @@ h1 .a { color: var(--a); } h1 .b { color: var(--b); }
     <summary>How to play</summary>
     <ol>
       <li>Each strip is <b>two words woven together</b>. Every word keeps its letters in order.</li>
-      <li>Tap a letter to put it in the <span class="a">pink</span> word, again for the <span class="b">blue</span> word, and again to clear it.</li>
+      <li>Tap the space <b>above</b> a letter to lift it into the <span class="a">pink</span> word, or <b>below</b> it to drop it into the <span class="b">blue</span> word. You can also swipe a letter up or down.</li>
+      <li>Tap a moved letter to put it back. Drag along a row to move several letters at once.</li>
       <li>When every letter is used and both strands spell words, the strip is solved.</li>
       <li>Three strips a day, from 4 + 4 letters up to 6 + 6. Each has only one answer.</li>
       <li>Stuck? <b>Hint</b> places one correct letter in the first unsolved strip.</li>
@@ -208,11 +217,61 @@ h1 .a { color: var(--a); } h1 .b { color: var(--b); }
   }
   const strand = (k, c) => [...day[k].s].filter((_, i) => game.strips[k].pick[i] === c).join('');
 
-  function tap(k, i) {
+  // Put letter i of strip k in 'A' (pink lane), 'B' (blue lane) or '' (back in the middle).
+  function place(k, i, where) {
     const st = game.strips[k];
-    if (game.done || st.solved || st.locked.includes(i)) return;
-    st.pick[i] = NEXT[st.pick[i]];
+    if (game.done || st.solved || st.locked.includes(i) || st.pick[i] === where) return;
+    st.pick[i] = where;
     afterChange(k);
+  }
+
+  function wireBoard(board) {
+    const k = +board.dataset.k;
+    let gesture = null;  // { row, mode, i, y }
+    const cellAt = (x, y) => { const e = document.elementFromPoint(x, y); return e && e.classList.contains('cell') && board.contains(e) ? e : null; };
+    board.addEventListener('pointerdown', e => {
+      const c = cellAt(e.clientX, e.clientY);
+      if (!c || c.disabled) return;
+      e.preventDefault();
+      board.setPointerCapture(e.pointerId);
+      const i = +c.dataset.i, row = c.dataset.row, st = game.strips[k];
+      if (row === 'M') { gesture = { row, i, y: e.clientY, moved: false }; return; }
+      // In a lane: tapping a letter that's already there sends it back; tapping empty space pulls it in.
+      const mode = st.pick[i] === row ? '' : row;
+      gesture = { row, mode };
+      place(k, i, mode);
+    });
+    board.addEventListener('pointermove', e => {
+      if (!gesture) return;
+      if (gesture.row === 'M') {
+        const dy = e.clientY - gesture.y;
+        if (!gesture.moved && Math.abs(dy) > 14) { gesture.moved = true; place(k, gesture.i, dy < 0 ? 'A' : 'B'); }
+        return;
+      }
+      const c = cellAt(e.clientX, e.clientY);
+      if (c && c.dataset.row === gesture.row) {
+        const i = +c.dataset.i, here = game.strips[k].pick[i];
+        if (gesture.mode === gesture.row || here === gesture.row) place(k, i, gesture.mode);
+      }
+    });
+    const end = () => {
+      if (gesture && gesture.row === 'M' && !gesture.moved) {
+        const st = game.strips[k];
+        if (st.pick[gesture.i]) place(k, gesture.i, '');
+        else say('Tap above a letter for the pink word, or below it for the blue word.');
+      }
+      gesture = null;
+    };
+    board.addEventListener('pointerup', end);
+    board.addEventListener('pointercancel', () => { gesture = null; });
+    // Keyboard: Enter or Space on a lane cell toggles that letter in or out of the lane.
+    board.addEventListener('click', e => {
+      if (e.detail !== 0) return;
+      const c = e.target.closest('.cell');
+      if (!c || c.dataset.row === 'M') return;
+      const i = +c.dataset.i;
+      place(k, i, game.strips[k].pick[i] === c.dataset.row ? '' : c.dataset.row);
+    });
   }
 
   function afterChange(k) {
@@ -225,7 +284,9 @@ h1 .a { color: var(--a); } h1 .b { color: var(--b); }
         if (!left) { game.done = true; save(); finish(true); return; }
         say(`<b>${strand(k, 'A')}</b> and <b>${strand(k, 'B')}</b>. ${left} to go.`);
       } else {
-        say(`<b>${strand(k, 'A')}</b> and <b>${strand(k, 'B')}</b> aren't both words. Keep untangling.`, true);
+        const a = strand(k, 'A'), b = strand(k, 'B');
+        if (a.length !== p.a.length) say(`Each word in this strip has ${p.a.length} letters. Pink has ${a.length}, blue has ${b.length}.`, true);
+        else say(`<b>${a}</b> and <b>${b}</b> aren't both words. Keep untangling.`, true);
         shake(k);
       }
     } else say('');
@@ -259,16 +320,18 @@ h1 .a { color: var(--a); } h1 .b { color: var(--b); }
     $('cards').innerHTML = day.map((p, k) => `
       <section class="card" aria-label="Strip ${k + 1}">
         <div class="top"><b>${p.a.length} + ${p.b.length} letters</b><span class="done" hidden>Solved ✓</span></div>
-        <div class="strip" style="grid-template-columns: repeat(${p.s.length}, minmax(0, 1fr))">
-          ${[...p.s].map((ch, i) => `<button class="tile" type="button" data-k="${k}" data-i="${i}">${ch}</button>`).join('')}
+        <div class="board" data-k="${k}" style="grid-template-columns: repeat(${p.s.length}, minmax(0, 1fr))">
+          ${['A', 'M', 'B'].map(row => [...p.s].map((ch, i) =>
+            `<button class="cell ${row === 'M' ? 'mid' : 'lane ' + row}" type="button" data-i="${i}" data-row="${row}"></button>`).join('')).join('')}
         </div>
+        <div class="lanehint"><span>↑ <span class="a">pink</span> word</span><span><span class="b">blue</span> word ↓</span></div>
         <div class="strands">
           <div class="strand A"><span class="dot A"></span><div class="slots"></div></div>
           <div class="strand B"><span class="dot B"></span><div class="slots"></div></div>
         </div>
         <div class="row"><button class="btn small" type="button" data-clear="${k}">Clear</button></div>
       </section>`).join('');
-    $('cards').querySelectorAll('.tile').forEach(t => t.onclick = () => tap(+t.dataset.k, +t.dataset.i));
+    $('cards').querySelectorAll('.board').forEach(wireBoard);
     $('cards').querySelectorAll('[data-clear]').forEach(b => b.onclick = () => clear(+b.dataset.clear));
   }
 
@@ -278,11 +341,18 @@ h1 .a { color: var(--a); } h1 .b { color: var(--b); }
       card.classList.toggle('solved', st.solved);
       card.querySelector('.done').hidden = !st.solved;
       card.querySelector('[data-clear]').parentElement.hidden = st.solved;
-      card.querySelectorAll('.tile').forEach((t, i) => {
-        t.className = 'tile' + (st.pick[i] ? ' ' + st.pick[i] : '') + (st.locked.includes(i) ? ' locked' : '');
-        t.disabled = st.solved || game.done;
-        t.setAttribute('aria-label', `${p.s[i]}, ${st.pick[i] === 'A' ? 'pink word' : st.pick[i] === 'B' ? 'blue word' : 'not placed'}`);
+      card.querySelectorAll('.cell').forEach(c => {
+        const i = +c.dataset.i, row = c.dataset.row, at = st.pick[i] || 'M', here = at === row;
+        c.textContent = here || row === 'M' ? p.s[i] : '';
+        c.classList.toggle('on', here && row !== 'M');
+        c.classList.toggle('gone', row === 'M' && !here);
+        c.classList.toggle('locked', here && st.locked.includes(i));
+        c.disabled = st.solved || game.done;
+        c.tabIndex = row === 'M' ? -1 : 0;
+        const name = row === 'A' ? 'pink word' : row === 'B' ? 'blue word' : 'middle';
+        c.setAttribute('aria-label', row === 'M' ? `${p.s[i]}${here ? '' : ' (moved)'}` : `${here ? 'Take ' + p.s[i] + ' out of' : 'Move ' + p.s[i] + ' into'} the ${name}`);
       });
+      card.querySelector('.lanehint').hidden = st.solved;
       for (const c of ['A', 'B']) {
         const w = strand(k, c);
         card.querySelector(`.strand.${c} .slots`).innerHTML = [...Array(Math.max(n, w.length))].map((_, j) =>
