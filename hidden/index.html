@@ -76,37 +76,19 @@ h1 span { background: var(--mark); color: var(--mark-ink); padding: 0 .1em; bord
 .theme b { font-family: var(--f-mono); font-size: .8rem; letter-spacing: .1em; text-transform: uppercase; color: var(--accent); }
 .theme span { font-size: .85rem; color: var(--muted); font-variant-numeric: tabular-nums; }
 .text {
-  margin: 0; font-family: var(--f-read); font-size: clamp(1.2rem, 4.6vw, 1.45rem); line-height: 1.9;
-  user-select: none; -webkit-user-select: none;
+  margin: 0; font-family: var(--f-read); font-size: clamp(1.3rem, 5.4vw, 1.6rem); line-height: 2.1; letter-spacing: .03em;
+  user-select: none; -webkit-user-select: none; touch-action: none; cursor: crosshair; -webkit-tap-highlight-color: transparent;
 }
-.w { cursor: pointer; border-radius: 3px; -webkit-tap-highlight-color: transparent; }
-.w:hover { text-decoration: underline dotted var(--accent); text-underline-offset: 5px; }
-.w:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
-.w.inlens { background: var(--accent-soft); box-shadow: 0 0 0 2px var(--accent-soft); }
+.ch.sel { background: var(--sel); box-shadow: 0 0 0 1px var(--accent); }
 
-/* The lens: the tapped word and its neighbours as big tiles */
-.lens { border-top: 1px dashed var(--line); padding-top: 12px; display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; }
-.lensnav { display: flex; justify-content: space-between; gap: 8px; }
-.lensnav .btn { padding: 7px 10px; font-size: .8rem; }
-.tiles { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px 14px; touch-action: none; user-select: none; -webkit-user-select: none; min-height: 44px; align-content: center; }
-.tiles .empty { color: var(--muted); font-size: .9rem; text-align: center; }
-.grp { display: flex; gap: 3px; flex: 0 0 auto; max-width: 100%; }
-.t {
-  appearance: none; width: 34px; flex: 0 1 auto; min-width: 20px; height: 44px; padding: 0; border-radius: 6px; cursor: pointer;
-  border: 1px solid var(--line); background: var(--bg); color: var(--ink);
-  font: 600 clamp(1rem, 4.6vw, 1.25rem)/1 var(--f-mono); text-transform: uppercase;
+/* Live preview of the letters being marked, floating above the finger */
+.loupe {
+  position: fixed; z-index: 20; pointer-events: none; transform: translate(-50%, -100%);
+  background: var(--ink); color: var(--bg); border-radius: 10px; padding: 8px 12px; box-shadow: 0 6px 18px rgba(0,0,0,.25);
+  font: 600 1.35rem/1 var(--f-mono); text-transform: uppercase; letter-spacing: .12em; white-space: nowrap;
 }
-.t:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
-.t.sel { background: var(--sel); border-color: var(--accent); }
-.t.found { background: var(--mark); color: var(--mark-ink); border-color: transparent; }
-.t.found.helped { background: var(--help-soft); color: var(--help); }
-.t.start { box-shadow: 0 0 0 2px var(--help); }
-.ch { border-radius: 2px; transition: background .12s; }
-.ch.sel { background: var(--sel); }
-.ch.found { background: var(--mark); color: var(--mark-ink); }
-.ch.found.helped { background: var(--help-soft); color: var(--help); }
-.ch.start { box-shadow: 0 0 0 2px var(--help); }
-.ch.clue { text-decoration: underline wavy var(--help); text-underline-offset: 5px; }
+.loupe.below { transform: translate(-50%, 0); }
+.loupe i { font-style: normal; opacity: .35; letter-spacing: 0; margin: 0 .1em; }
 
 .msg { margin: 0; min-height: 1.5em; font-size: .95rem; color: var(--muted); }
 .msg b { color: var(--ink); font-family: var(--f-mono); font-weight: 600; text-transform: uppercase; }
@@ -154,7 +136,7 @@ h1 span { background: var(--mark); color: var(--mark-ink); padding: 0 .1em; bord
     <ol>
       <li>The paragraph hides several words on today's <b>theme</b>.</li>
       <li>Every hidden word <b>runs across a gap</b> between words. "Slo<b>w l</b>earner" hides OWL. Ignore spaces and punctuation.</li>
-      <li><b>Tap a word</b> to see it and its neighbours up close. Then drag across the big letters, or tap the first letter and then the last.</li>
+      <li><b>Drag</b> across the letters to mark one. A preview above your finger shows what you've picked, so adjust before you let go. You can also tap the first letter and then the last.</li>
       <li>The boxes below show how many words there are and how long each one is.</li>
       <li>Stuck? <b>Hint</b> shows where a word starts. Tap it again to reveal that word.</li>
     </ol>
@@ -163,13 +145,6 @@ h1 span { background: var(--mark); color: var(--mark-ink); padding: 0 .1em; bord
   <section class="sheet">
     <div class="theme"><b id="theme">Theme</b><span id="count"></span></div>
     <p class="text" id="text"></p>
-    <div class="lens" id="lens">
-      <div class="tiles" id="tiles" aria-label="Close-up letters"></div>
-      <div class="lensnav">
-        <button class="btn" id="lensPrev" type="button">‹ Earlier word</button>
-        <button class="btn" id="lensNext" type="button">Later word ›</button>
-      </div>
-    </div>
   </section>
   <p class="msg" id="msg" aria-live="polite"></p>
   <div class="answers" id="answers" aria-label="Words to find"></div>
@@ -191,6 +166,7 @@ h1 span { background: var(--mark); color: var(--mark-ink); padding: 0 .1em; bord
   </section>
 </div>
 <div class="toast" id="toast" hidden></div>
+<div class="loupe" id="loupe" hidden aria-hidden="true"></div>
 
 <script src="puzzles.js"></script>
 <script>
@@ -212,8 +188,7 @@ h1 span { background: var(--mark); color: var(--mark-ink); padding: 0 .1em; bord
     return mod(day, PUZZLES.length);
   }
 
-  let P, stream = '', owner = [], spans = [], wordEls = [], ranges = [], game, daily = true, timer = null;
-  let lensFrom = null;  // index of the first word shown in the lens
+  let P, stream = '', owner = [], spans = [], game, daily = true, timer = null;
   let hintFor = null;   // { word, at } once a first hint is showing
 
   // Where an answer runs across a gap: its start positions in the letter stream.
@@ -235,22 +210,18 @@ h1 span { background: var(--mark); color: var(--mark-ink); padding: 0 .1em; bord
     $('result').hidden = true;
     $('theme').textContent = P.theme;
     buildText();
-    renderLens();
     say(game.found.length ? '' : `Find ${P.words.length} hidden words on the theme <b>${P.theme}</b>.`);
     render();
     if (game.done) finish(false); else startClock();
   }
 
-  // Wrap each word in a tappable span and each letter in its own span.
+  // Wrap each letter in its own span; keep spaces and punctuation as plain text.
   function buildText() {
     const el = $('text');
     el.innerHTML = '';
-    stream = ''; owner = []; spans = []; wordEls = []; ranges = [];
-    for (const chunk of P.text.split(/\s+/)) {
-      if (!chunk) continue;
+    stream = ''; owner = []; spans = [];
+    P.text.split(/\s+/).filter(Boolean).forEach((chunk, n) => {
       const w = document.createElement('span');
-      const n = wordEls.length, from = stream.length;
-      w.className = 'w'; w.tabIndex = 0; w.setAttribute('role', 'button');
       for (const ch of chunk) {
         if (/[a-z]/i.test(ch)) {
           const s = document.createElement('span');
@@ -259,80 +230,75 @@ h1 span { background: var(--mark); color: var(--mark-ink); padding: 0 .1em; bord
           w.append(s);
         } else w.append(ch);
       }
-      ranges.push([from, stream.length]);
-      w.setAttribute('aria-label', `Look closer at "${chunk}"`);
-      w.onclick = () => openLens(n);
-      w.onkeydown = e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openLens(n); } };
-      wordEls.push(w);
       el.append(w, ' ');
-    }
-    lensFrom = null;
-  }
-
-  // Show the tapped word plus enough following words to cover a hidden word (two or three words).
-  function lensWords() {
-    if (lensFrom == null) return [];
-    const out = [lensFrom];
-    let letters = ranges[lensFrom][1] - ranges[lensFrom][0];
-    for (let w = lensFrom + 1; w < ranges.length && out.length < 3; w++) {
-      const len = ranges[w][1] - ranges[w][0];
-      if (out.length >= 2 && letters + len > 12) break;
-      out.push(w); letters += len;
-    }
-    return out;
-  }
-  function openLens(w) {
-    lensFrom = Math.max(0, Math.min(w, ranges.length - 2));
-    anchor = null; pending = false;
-    renderLens(); render();
+    });
   }
 
   // ----- Selecting letters: drag across them, or tap the first and then the last -----
-  let anchor = null, downAt = null, pending = false, dragged = false, current = null;
-  const indexAt = (x, y) => { const e = document.elementFromPoint(x, y); return e && e.classList.contains('t') ? +e.dataset.i : null; };
-  const tilesEl = () => [...$('tiles').querySelectorAll('.t')];
+  // The finger snaps to the nearest letter, preferring the line it's on, so near-misses still count.
+  let anchor = null, downAt = null, pending = false, dragged = false, current = null, rects = [];
+  function nearest(x, y, limit) {
+    let best = null, bestScore = Infinity;
+    rects.forEach((r, i) => {
+      const dx = Math.max(0, Math.abs(x - (r.left + r.right) / 2) - r.width / 2);
+      const dy = Math.max(0, Math.abs(y - (r.top + r.bottom) / 2) - r.height / 2);
+      const score = dx + dy * 2.5;
+      if (score < bestScore) { bestScore = score; best = i; }
+    });
+    return bestScore <= limit ? best : null;
+  }
   function showSel(a, b) {
     spans.forEach(s => s.classList.remove('sel'));
-    tilesEl().forEach(t => t.classList.remove('sel'));
     if (a == null || b == null) return;
     const [lo, hi] = a <= b ? [a, b] : [b, a];
     for (let i = lo; i <= hi; i++) spans[i].classList.add('sel');
-    tilesEl().forEach(t => { if (+t.dataset.i >= lo && +t.dataset.i <= hi) t.classList.add('sel'); });
   }
-  function finishSel(a, b) { anchor = null; pending = false; check(Math.min(a, b), Math.max(a, b)); }
+  function loupe(a, b, x, y) {
+    const el = $('loupe');
+    if (a == null) { el.hidden = true; return; }
+    const [lo, hi] = a <= b ? [a, b] : [b, a];
+    let html = '';
+    for (let i = lo; i <= hi; i++) html += (i > lo && owner[i] !== owner[i - 1] ? '<i>│</i>' : '') + stream[i];
+    el.innerHTML = html;
+    el.hidden = false;
+    const below = y < 90;
+    el.classList.toggle('below', below);
+    el.style.left = Math.min(Math.max(x, el.offsetWidth / 2 + 8), innerWidth - el.offsetWidth / 2 - 8) + 'px';
+    el.style.top = (below ? y + 40 : y - 44) + 'px';
+  }
+  function finishSel(a, b) { anchor = null; pending = false; loupe(null); check(Math.min(a, b), Math.max(a, b)); }
 
-  $('tiles').addEventListener('pointerdown', e => {
+  const text = $('text');
+  text.addEventListener('pointerdown', e => {
     if (game.done) return;
-    const i = indexAt(e.clientX, e.clientY);
+    rects = spans.map(s => s.getBoundingClientRect());
+    const i = nearest(e.clientX, e.clientY, 24);
     if (i == null) return;
     e.preventDefault();
-    $('tiles').setPointerCapture(e.pointerId);
+    text.setPointerCapture(e.pointerId);
     downAt = i; dragged = false; current = i;
     pending = anchor != null;            // a first tap is waiting for its second
     if (!pending) { anchor = i; showSel(i, i); }
+    loupe(anchor, i, e.clientX, e.clientY);
   });
-  $('tiles').addEventListener('pointermove', e => {
-    if (downAt == null || !$('tiles').hasPointerCapture(e.pointerId)) return;
-    const i = indexAt(e.clientX, e.clientY);
-    if (i == null || i === current) return;
-    if (!dragged) { dragged = true; if (pending) { anchor = downAt; pending = false; } }
-    current = i; showSel(anchor, i);
+  text.addEventListener('pointermove', e => {
+    if (downAt == null || !text.hasPointerCapture(e.pointerId)) return;
+    const i = nearest(e.clientX, e.clientY, Infinity);
+    if (i == null) return;
+    if (i !== current) {
+      if (!dragged) { dragged = true; if (pending) { anchor = downAt; pending = false; } }
+      current = i; showSel(anchor, i);
+    }
+    loupe(anchor, current, e.clientX, e.clientY);
   });
-  $('tiles').addEventListener('pointerup', () => {
+  text.addEventListener('pointerup', () => {
     if (downAt == null) return;
     const at = downAt; downAt = null;
     if (dragged) finishSel(anchor, current);
     else if (pending) finishSel(anchor, at);
-    // otherwise this was a first tap: keep it marked and wait for the second
+    else { loupe(null); say('Now tap the last letter, or drag across the word.'); }
   });
-  // Keyboard: Enter on a tile works like a tap.
-  $('tiles').addEventListener('click', e => {
-    if (e.detail !== 0 || game.done || !e.target.classList.contains('t')) return;
-    const i = +e.target.dataset.i;
-    if (anchor == null) { anchor = i; showSel(i, i); } else finishSel(anchor, i);
-  });
-  $('lensPrev').onclick = () => { if (lensFrom > 0) openLens(lensFrom - 1); };
-  $('lensNext').onclick = () => { if (lensFrom != null && lensFrom < ranges.length - 2) openLens(lensFrom + 1); };
+  text.addEventListener('pointercancel', () => { downAt = null; anchor = null; pending = false; showSel(null); loupe(null); });
 
   function check(lo, hi) {
     showSel(null);
@@ -363,23 +329,12 @@ h1 span { background: var(--mark); color: var(--mark-ink); padding: 0 .1em; bord
     const word = P.words.filter(w => !game.found.some(f => f.word === w)).sort((a, b) => a.length - b.length)[0];
     hintFor = { word, at: crossings(word)[0] };
     game.hints++;
-    openLens(owner[hintFor.at]);
     say(`A ${word.length}-letter word starts at the circled letter. Tap Hint again to reveal it.`);
     save(); render();
   }
 
   // ----- View -----
   function say(html, warn = false) { $('msg').innerHTML = html; $('msg').classList.toggle('warn', warn); }
-
-  function renderLens() {
-    const ws = lensWords();
-    $('tiles').innerHTML = ws.length ? ws.map(w => {
-      const [a, b] = ranges[w];
-      return `<div class="grp">${[...Array(b - a)].map((_, j) => `<button class="t" type="button" data-i="${a + j}">${stream[a + j]}</button>`).join('')}</div>`;
-    }).join('') : '<p class="empty">Tap a word above to look at it up close.</p>';
-    $('lensPrev').disabled = !ws.length || lensFrom === 0;
-    $('lensNext').disabled = !ws.length || ws[ws.length - 1] >= ranges.length - 1;
-  }
 
   function mark(el, i) {
     const f = game.found.filter(f => i >= f.at && i < f.at + f.word.length);
@@ -390,12 +345,6 @@ h1 span { background: var(--mark); color: var(--mark-ink); padding: 0 .1em; bord
 
   function render() {
     spans.forEach((s, i) => mark(s, i));
-    tilesEl().forEach(t => mark(t, +t.dataset.i));
-    const shown = new Set(lensWords());
-    wordEls.forEach((w, n) => w.classList.toggle('inlens', shown.has(n)));
-    for (const f of game.found) {
-      for (let i = f.at; i < f.at + f.word.length; i++) spans[i].classList.add('found', ...(f.helped ? ['helped'] : []));
-    }
     $('count').textContent = `${game.found.length} of ${P.words.length} found`;
     // Slots sorted by length so their order gives nothing away.
     const slots = [...P.words].sort((a, b) => a.length - b.length || a.localeCompare(b));
