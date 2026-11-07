@@ -55,6 +55,9 @@ body {
 }
 .wrap { max-width: 460px; margin: 0 auto; display: grid; gap: 20px; }
 
+.home { justify-self: start; font-size: .85rem; font-weight: 600; color: var(--muted); text-decoration: none; margin-bottom: -10px; }
+.home:hover { color: var(--brass); }
+.home:focus-visible { outline: 2px solid var(--brass); outline-offset: 2px; border-radius: 4px; }
 header { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
 h1 { font-family: var(--f-dial); font-weight: 800; font-size: 1.6rem; letter-spacing: .02em; margin: 0; }
 h1 span { color: var(--brass); }
@@ -131,6 +134,7 @@ kbd { font-family: var(--f-dial); font-size: .75em; border: 1px solid var(--line
 </style>
 
 <div class="wrap">
+  <a class="home" href="../index.html">← All puzzles</a>
   <header>
     <h1>T<span>O</span>MBLER</h1>
     <div class="meta" id="meta">No. 1</div>

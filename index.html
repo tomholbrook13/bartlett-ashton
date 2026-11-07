@@ -1,0 +1,158 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Tom's Daily Puzzles</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Martian+Mono:wght@400;600;800&family=Figtree:wght@400;500;700&display=swap">
+<style>
+/* Layout: a short masthead, then one card per game (two across on wider screens), each in that game's own accent. */
+:root {
+  --bg: #ebedeb;
+  --panel: #f8f9f7;
+  --ink: #1e2423;
+  --muted: #5d6764;
+  --line: #c9cfcc;
+  --tile: #ffffff;
+  --brass: #a8741a;
+  --brass-soft: #f1e2c2;
+  --teal: #1d756c;
+  --teal-soft: #d3ebe6;
+  --done: #2f7d5b;
+  --shadow: 0 1px 0 rgba(255,255,255,.7) inset, 0 2px 0 rgba(30,36,35,.08);
+  --f-mono: "Martian Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+  --f-body: "Figtree", system-ui, -apple-system, "Segoe UI", sans-serif;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #121615; --panel: #1a201f; --ink: #e5eae8; --muted: #95a29e; --line: #2d3734; --tile: #222a28;
+    --brass: #e0a947; --brass-soft: #3a2e17; --teal: #52c2b4; --teal-soft: #163530; --done: #5cc796;
+    --shadow: 0 1px 0 rgba(255,255,255,.05) inset, 0 2px 0 rgba(0,0,0,.35);
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #121615; --panel: #1a201f; --ink: #e5eae8; --muted: #95a29e; --line: #2d3734; --tile: #222a28;
+  --brass: #e0a947; --brass-soft: #3a2e17; --teal: #52c2b4; --teal-soft: #163530; --done: #5cc796;
+  --shadow: 0 1px 0 rgba(255,255,255,.05) inset, 0 2px 0 rgba(0,0,0,.35);
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+html { padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px); }
+body {
+  margin: 0; background: var(--bg); color: var(--ink); font-family: var(--f-body); font-size: 16px; line-height: 1.5;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 28px 48px;
+}
+.wrap { max-width: 760px; margin: 0 auto; display: grid; gap: 24px; }
+
+.mast { display: grid; gap: 4px; }
+.mast .date { font-family: var(--f-mono); font-size: .72rem; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+h1 { margin: 0; font-family: var(--f-mono); font-weight: 800; font-size: clamp(1.5rem, 6vw, 2.1rem); letter-spacing: .01em; line-height: 1.15; text-wrap: balance; }
+.mast p { margin: 0; color: var(--muted); max-width: 52ch; }
+
+.games { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr)); gap: 14px; }
+.game {
+  --c: var(--ink); --c-soft: var(--line);
+  display: grid; gap: 14px; align-content: start; padding: 18px; border-radius: 14px; text-decoration: none; color: inherit;
+  background: var(--panel); border: 1px solid var(--line); box-shadow: var(--shadow);
+  transition: border-color .15s, transform .15s;
+}
+.game:hover { border-color: var(--c); transform: translateY(-2px); }
+.game:focus-visible { outline: 2px solid var(--c); outline-offset: 3px; }
+.game.tombler { --c: var(--brass); --c-soft: var(--brass-soft); }
+.game.whittle { --c: var(--teal); --c-soft: var(--teal-soft); }
+.game h2 { margin: 0; font-family: var(--f-mono); font-weight: 800; font-size: 1.3rem; letter-spacing: .02em; }
+.game h2 span { color: var(--c); }
+.game p { margin: 0; color: var(--muted); }
+
+/* Little pictures of each game, drawn with the same tiles the games use */
+.pic { display: grid; gap: 4px; }
+.row { display: flex; gap: 4px; }
+.cell {
+  width: 26px; height: 26px; display: grid; place-items: center; border-radius: 5px;
+  font: 600 .8rem/1 var(--f-mono); text-transform: uppercase; background: var(--tile); border: 1px solid var(--line);
+}
+.cell.on { background: var(--c-soft); color: var(--c); border-color: transparent; }
+.cell.arrow { background: none; border: none; color: var(--muted); width: 14px; }
+.cell.empty { border-style: dashed; background: none; }
+
+.foot { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; padding-top: 12px; border-top: 1px dashed var(--line); }
+.chip { font-family: var(--f-mono); font-size: .72rem; letter-spacing: .04em; padding: 4px 8px; border-radius: 999px; border: 1px solid var(--line); color: var(--muted); white-space: nowrap; }
+.chip.done { border-color: var(--done); color: var(--done); }
+.chip.going { border-color: var(--c); color: var(--c); }
+.meta { font-size: .85rem; color: var(--muted); font-variant-numeric: tabular-nums; }
+.play { font-weight: 700; color: var(--c); }
+
+.note { margin: 0; font-size: .85rem; color: var(--muted); }
+</style>
+
+<div class="wrap">
+  <header class="mast">
+    <div class="date" id="date"></div>
+    <h1>Tom's Daily Puzzles</h1>
+    <p>Short word puzzles with a new one each day. Each takes a few minutes.</p>
+  </header>
+
+  <main class="games">
+    <a class="game tombler" href="tombler/index.html" data-game="tombler">
+      <h2>T<span>O</span>MBLER</h2>
+      <div class="pic" aria-hidden="true">
+        <div class="row"><span class="cell arrow">‹</span><span class="cell on">c</span><span class="cell">s</span><span class="cell">c</span><span class="cell">t</span><span class="cell">n</span><span class="cell arrow">›</span></div>
+        <div class="row"><span class="cell arrow">‹</span><span class="cell on">l</span><span class="cell">e</span><span class="cell">h</span><span class="cell">i</span><span class="cell">e</span><span class="cell arrow">›</span></div>
+        <div class="row"><span class="cell arrow">‹</span><span class="cell on">a</span><span class="cell">n</span><span class="cell">e</span><span class="cell">g</span><span class="cell">v</span><span class="cell arrow">›</span></div>
+      </div>
+      <p>Turn rings of letters to spell five hidden words down the columns, one at a time.</p>
+      <div class="foot"><span class="chip" data-status>Not started</span><span class="meta" data-meta></span><span class="play">Play →</span></div>
+    </a>
+
+    <a class="game whittle" href="whittle/index.html" data-game="whittle">
+      <h2>WH<span>I</span>TTLE</h2>
+      <div class="pic" aria-hidden="true">
+        <div class="row"><span class="cell on">s</span><span class="cell on">i</span><span class="cell on">n</span></div>
+        <div class="row"><span class="cell on">s</span><span class="cell on">i</span><span class="cell on">g</span><span class="cell on">n</span></div>
+        <div class="row"><span class="cell empty"></span><span class="cell empty"></span><span class="cell empty"></span><span class="cell empty"></span><span class="cell empty"></span></div>
+      </div>
+      <p>Grow a three-letter word one letter at a time until all eight letters spell the day's word.</p>
+      <div class="foot"><span class="chip" data-status>Not started</span><span class="meta" data-meta></span><span class="play">Play →</span></div>
+    </a>
+  </main>
+
+  <p class="note">New puzzles every day at midnight, your time. Your progress and streaks are saved in this browser.</p>
+</div>
+
+<script>
+(() => {
+  // Each game numbers its puzzles from its own start date and keeps progress under its own prefix.
+  const GAMES = {
+    tombler: { start: '2026-11-06', length: 730, save: i => 'tombler:v2-day-' + i, stats: 'tombler:stats', progress: g => g.locked && g.locked.length },
+    whittle: { start: '2026-11-07', length: 730, save: i => 'whittle:day-' + i, stats: 'whittle:stats', progress: g => g.chain && g.chain.length },
+  };
+  const read = k => { try { return JSON.parse(localStorage.getItem(k)); } catch { return null; } };
+  const now = new Date();
+  const today = Date.UTC(now.getFullYear(), now.getMonth(), now.getDate());
+
+  document.getElementById('date').textContent = now.toLocaleDateString(undefined, { weekday: 'long', day: 'numeric', month: 'long' });
+
+  for (const card of document.querySelectorAll('[data-game]')) {
+    const g = GAMES[card.dataset.game];
+    const [y, m, d] = g.start.split('-').map(Number);
+    const day = Math.round((today - Date.UTC(y, m - 1, d)) / 864e5);
+    const index = ((day % g.length) + g.length) % g.length;
+    const saved = read(g.save(index));
+    const stats = read(g.stats);
+    const chip = card.querySelector('[data-status]');
+    if (saved && saved.done) { chip.textContent = 'Solved ✓'; chip.classList.add('done'); card.querySelector('.play').textContent = 'See result →'; }
+    else if (saved && g.progress(saved)) { chip.textContent = 'In progress'; chip.classList.add('going'); card.querySelector('.play').textContent = 'Continue →'; }
+    // A streak only counts if it includes today or yesterday.
+    const live = stats && (stats.last === index || stats.last === index - 1);
+    const streak = live ? stats.streak : 0;
+    card.querySelector('[data-meta]').textContent = `No. ${index + 1}` + (streak > 1 ? ` · ${streak}-day streak` : '');
+  }
+})();
+</script>
