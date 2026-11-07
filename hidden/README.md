@@ -2,7 +2,8 @@
 
 A daily hidden-word hunt. A short paragraph hides six to eight words on a
 theme, each running across a gap between words ("slo**w l**earners" hides
-OWL). Drag across the letters, or tap the first and last letter, to mark one.
+OWL). Tap a word to open a close-up lens of it and the next word or two as
+large letter tiles, then drag across the tiles or tap the first and last letter.
 
 - `index.html` is the whole game (no build step).
 - `puzzles.json` is where puzzles are written: a theme, a paragraph, and the
