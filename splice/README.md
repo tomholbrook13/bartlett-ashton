@@ -2,8 +2,7 @@
 
 A daily untangling puzzle. Each strip is two words woven together, with each
 word's letters kept in order (FULL + FARM becomes FFUARLML). Tap letters to
-lift them into the pink lane above or drop them into the blue lane below until
-both lanes spell words. Three
+send them to the pink or blue word until both strands spell words. Three
 strips a day: 4 + 4, 5 + 5 and 6 + 6 letters.
 
 - `index.html` is the whole game (no build step).
