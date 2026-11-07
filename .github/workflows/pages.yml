@@ -1,9 +1,9 @@
-name: Deploy Tombler to GitHub Pages
+name: Deploy games to GitHub Pages
 
 on:
   push:
     branches: [main]
-    paths: ["tombler/**", ".github/workflows/pages.yml"]
+    paths: ["tombler/**", "whittle/**", ".github/workflows/pages.yml"]
   workflow_dispatch:
 
 permissions:
@@ -28,6 +28,8 @@ jobs:
         run: |
           mkdir _site
           cp tombler/index.html tombler/puzzles.js tombler/words.js _site/
+          mkdir _site/whittle
+          cp whittle/index.html whittle/puzzles.js whittle/words.js _site/whittle/
       - uses: actions/upload-pages-artifact@v3
       - id: deployment
         uses: actions/deploy-pages@v4
