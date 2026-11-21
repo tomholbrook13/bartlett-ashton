@@ -7,7 +7,8 @@ letter and a preview above it shows what's picked. Tapping the first and last
 letter works too.
 
 - `index.html` is the whole game (no build step).
-- `puzzles.json` is where puzzles are written: a theme, a paragraph, and the
+- `puzzles.json` is where puzzles are written (60 so far, enough until
+  2027-01-05): a theme, a paragraph, and the
   hidden words. Puzzle n is played on 2026-11-07 + n days, looping when the
   list runs out.
 - `build.py` checks every puzzle and writes `puzzles.js`. Each word must run

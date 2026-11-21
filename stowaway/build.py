@@ -18,7 +18,7 @@ START = "2026-11-07"
 VOCAB = {
     "Birds": "owl emu hen tit jay auk rhea ibis kiwi crow rook wren lark kite tern dove swan duck teal smew coot rail ruff knot gull skua erne hawk heron raven robin finch eagle egret goose crane stork quail snipe stilt swift macaw myna stint grebe diver shrike thrush pigeon parrot falcon magpie oriole osprey petrel puffin condor toucan turkey cuckoo linnet merlin plover thrush curlew dunlin bunting sparrow starling ostrich pelican penguin",
     "Fruit": "fig date pear plum lime kiwi sloe apple grape lemon melon mango peach guava olive berry cherry orange banana papaya quince damson lychee raisin currant apricot",
-    "Space": "sun moon star mars venus earth pluto comet orbit nova saturn uranus nebula galaxy meteor rocket planet jupiter mercury neptune",
+    "Space": "sun moon star space mars venus earth pluto comet orbit nova saturn uranus nebula galaxy meteor rocket planet jupiter mercury neptune",
     "Colours": "red tan blue pink gold teal grey gray cyan navy rose ruby jade lilac amber beige ochre mauve white black green coral olive ivory brown cream peach plum lemon khaki taupe umber sepia",
     "Instruments": "harp drum gong horn lute tuba oboe bell fife piano flute cello viola organ sitar banjo bugle kazoo cornet violin guitar trumpet",
     "Countries": "chad iran iraq oman mali cuba togo fiji laos peru chile china japan spain italy wales nepal egypt kenya malta niger qatar yemen ghana haiti sudan tonga samoa gabon benin india syria libya korea france greece brazil russia",
@@ -28,7 +28,26 @@ VOCAB = {
     "Trees": "oak ash elm fir yew box pine palm lime teak beech birch maple cedar larch alder aspen holly hazel rowan willow poplar spruce cherry",
     "Body parts": "arm leg hip toe ear eye lip jaw rib gum chin knee neck hand foot nose shin heel palm back calf liver heart lung brain spine skull wrist ankle elbow thumb",
     "Elements": "tin iron gold lead zinc neon argon radon xenon boron steel brass carbon cobalt copper nickel silver sulfur helium oxygen",
-    "Kitchen": "pan pot wok cup mug jug fork knife spoon ladle whisk sieve oven plate tray bowl grater kettle toaster",
+    "Kitchen": "pan pot wok cup mug jug jar tin hob dish sink rack fork knife spoon ladle whisk sieve oven plate tray bowl grater kettle toaster",
+    "Insects": "ant bee bug moth wasp gnat flea mite tick louse midge aphid beetle hornet cricket locust weevil earwig termite cicada",
+    "Drinks": "tea ale gin rum cola wine beer mead sake port milk cider juice soda tonic latte mocha cocoa punch sherry brandy vodka",
+    "Tools": "saw axe awl hoe file vice rake drill plane level clamp spade tongs chisel hammer mallet wrench pliers sander",
+    "Furniture": "bed cot sofa desk crib bench chair stool table shelf couch divan futon dresser ottoman cabinet",
+    "Fabrics": "silk wool lace felt satin denim linen tweed nylon serge velvet cotton chintz jersey suede",
+    "Boats": "ark sub tug raft punt junk dhow scow yacht canoe barge ferry liner kayak sloop skiff dinghy cutter galley",
+    "Mammals": "rat bat ape cow pig elk yak lion bear wolf deer seal mole hare mink vole goat lynx otter panda camel llama tiger zebra horse moose hippo rhino tapir sloth bison stoat shrew badger",
+    "Greek letters": "eta rho tau chi psi phi beta iota zeta alpha gamma delta omega sigma theta kappa lambda",
+    "Herbs & spices": "bay rue sage mint dill mace basil thyme cumin chili clove anise curry nutmeg ginger fennel chive pepper",
+    "Rivers": "dee exe tay cam nile ural oder elbe ouse tees tyne avon wye trent rhine seine volga indus congo tiber niger loire tagus thames ganges danube amazon yukon",
+    "Capital cities": "rome oslo lima riga kyiv doha bern baku male apia suva seoul delhi cairo paris tokyo sofia minsk quito hanoi dakar accra rabat tunis kabul athens dublin london madrid berlin vienna",
+    "Chess": "king rook pawn mate move draw rank file board check queen bishop knight castle gambit",
+    "Gems": "jet opal ruby jade onyx pearl amber coral agate jasper garnet topaz beryl zircon emerald diamond",
+    "Music": "rap pop emo ska dub jazz rock soul folk punk funk trap disco blues metal house grime opera swing indie techno reggae",
+    "Numbers": "one two six ten nil nine five four zero seven eight three score dozen twelve eleven",
+    "Bakery": "bun bap pie roll cake tart flan loaf scone bagel muffin pastry crumpet",
+    "Dances": "jig jive reel hula tango salsa waltz polka rumba samba conga twist limbo mambo disco ballet bolero",
+    "Shapes": "arc cube cone oval disc ring star kite heart cross prism square circle sphere",
+    "Sea creatures": "eel ray crab clam seal orca squid whale shark prawn krill coral oyster urchin mussel shrimp lobster octopus dolphin",
     "Clothes": "hat cap bra tie coat sock shoe boot belt vest scarf glove shirt skirt dress jeans gown robe cape kilt sari toga tunic apron mitt",
 }
 
@@ -69,7 +88,8 @@ for n, p in enumerate(puzzles, 1):
         if w in plain:
             print(f"#{n} {p['theme']}: '{w}' appears as a plain word"); problems += 1
     for w in VOCAB.get(p["theme"], "").split():
-        if w not in p["words"] and crossings(stream, owner, w):
+        # A theme word inside an answer (ETA in BETA) can't be found separately, so it's fine.
+        if w not in p["words"] and not any(w in a for a in p["words"]) and crossings(stream, owner, w):
             print(f"#{n} {p['theme']}: extra '{w}' hides across a gap"); problems += 1
     print(f"#{n} {p['theme']}: {len(p['words'])} words, {len(p['text'].split())} words of text")
 
